@@ -1,105 +1,115 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import AppSidebar from '../components/studio/AppSidebar';
-import { en } from '../i18n/en';
-import type { Feature } from '../shared/styles';
+import { useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import AppLayout from '../components/layout/AppLayout';
+import StyleCard from '../components/StyleCard';
+import StyleGrid from '../components/StyleGrid';
+import SearchBar from '../components/SearchBar';
+import CategoryTabs from '../components/CategoryTabs';
+import SortDropdown from '../components/SortDropdown';
 import { resolveStyleMeta } from '../shared/styles';
 import { useStyles } from '../hooks/useStyles';
 
-type EngineFilter = 'all' | 'local' | 'cloud';
+type SortKey = 'popular' | 'newest';
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'popular', label: 'Popular' },
+  { value: 'newest', label: 'Newest' },
+];
 
 export default function ExplorePage() {
-  const [collapsed, setCollapsed] = useState(false);
-  const [engine, setEngine] = useState<EngineFilter>('all');
-  const [category, setCategory] = useState<string>('all');
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get('q') ?? '');
+  const [category, setCategory] = useState(searchParams.get('category') ?? 'all');
+  const [sort, setSort] = useState<SortKey>('popular');
+
   const catalog = useStyles();
-  const styles = catalog?.styles ?? [];
   const categories = catalog?.categories ?? [];
 
-  useEffect(() => {
-    document.title = `${en.appName} — Explore Styles`;
-  }, []);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return (catalog?.styles ?? []).filter((s) => {
+      if (category !== 'all' && s.category !== category) return false;
+      if (q) {
+        const { label, description } = resolveStyleMeta(s);
+        const haystack = [label, description, s.category, (s.tags ?? []).join(' ')]
+          .join(' ')
+          .toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [catalog, category, query]);
 
-  const goFeature = (f: Feature) => navigate(`/?feature=${f}`);
+  const sorted = useMemo(() => {
+    const list = [...filtered];
+    if (sort === 'popular') {
+      list.sort((a, b) => (b.usageCount ?? 0) - (a.usageCount ?? 0));
+    } else {
+      list.sort((a, b) => (b.order ?? 0) - (a.order ?? 0));
+    }
+    return list;
+  }, [filtered, sort]);
 
-  const displayed = styles.filter((s) => {
-    if (engine !== 'all' && s.engine !== engine) return false;
-    if (category !== 'all' && s.category !== category) return false;
-    return true;
-  });
+  const setCategoryAndUrl = (next: string) => {
+    setCategory(next);
+    const params = new URLSearchParams(searchParams);
+    if (next === 'all') params.delete('category');
+    else params.set('category', next);
+    setSearchParams(params, { replace: true });
+  };
 
   return (
-    <div className="page page--app">
-      <AppSidebar
-        feature="browser"
-        onFeature={goFeature}
-        collapsed={collapsed}
-        onToggle={() => setCollapsed((c) => !c)}
-      />
-
-      <main className={`app-main landing-app-main${collapsed ? ' app-main--collapsed' : ''}`}>
+    <AppLayout>
+      <div className="landing-app-main">
         <div className="explore-head">
+          <span className="landing-eyebrow">Style Gallery</span>
           <h1 className="hero-h1">Explore Styles</h1>
-          <p className="hero-sub">Browse all available styles — on-device anime looks and cloud AI transformations.</p>
-          <div className="explore-filters">
-            {(['all', 'local', 'cloud'] as const).map((e) => (
-              <button
-                key={e}
-                type="button"
-                className={`explore-filter-btn${engine === e ? ' active' : ''}`}
-                onClick={() => setEngine(e)}
-              >
-                {e === 'all' ? 'All' : e === 'local' ? 'On-device' : 'Cloud AI'}
-              </button>
-            ))}
-          </div>
-          <div className="explore-filters">
-            <button
-              type="button"
-              className={`explore-filter-btn${category === 'all' ? ' active' : ''}`}
-              onClick={() => setCategory('all')}
-            >
-              All categories
-            </button>
-            {categories.map((c) => (
-              <button
-                key={c}
-                type="button"
-                className={`explore-filter-btn${category === c ? ' active' : ''}`}
-                onClick={() => setCategory(c)}
-              >
-                {c}
-              </button>
-            ))}
+          <p className="hero-sub">Discover styles for your next creation.</p>
+
+          <div className="explore-controls">
+            <div className="explore-row">
+              <SearchBar
+                value={query}
+                onChange={setQuery}
+                placeholder="Search styles, prompts, or inspiration…"
+              />
+              <SortDropdown
+                value={sort}
+                onChange={(v) => setSort(v as SortKey)}
+                options={SORT_OPTIONS}
+              />
+            </div>
+            <CategoryTabs
+              categories={categories}
+              active={category}
+              onChange={setCategoryAndUrl}
+            />
           </div>
         </div>
 
-        <div className="explore-grid">
-          {displayed.map((s) => {
-            const { label, description } = resolveStyleMeta(s);
-            return (
-              <button
-                key={s.id}
-                type="button"
-                className="explore-card"
-                onClick={() => navigate(`/?feature=${s.engine === 'local' ? 'browser' : 'api'}`)}
-              >
-                <div className="explore-card-img-wrap">
-                  <img src={s.sampleImage} alt={label} loading="lazy" className="explore-card-img" />
-                  <span className={`explore-card-badge explore-card-badge--${s.engine}`}>
-                    {s.engine === 'local' ? 'On-device' : 'Cloud'}
-                  </span>
-                </div>
-                <div className="explore-card-body">
-                  <strong>{label}</strong>
-                  {description && <small>{description}</small>}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </main>
-    </div>
+        {sorted.length ? (
+          <>
+            <p className="explore-count" aria-live="polite">
+              {sorted.length} style{sorted.length === 1 ? '' : 's'}
+            </p>
+            <StyleGrid>
+              {sorted.map((s) => (
+                <StyleCard
+                  key={s.id}
+                  style={s}
+                  onUse={(id) => navigate(`/styles/${id}`)}
+                />
+              ))}
+            </StyleGrid>
+          </>
+        ) : (
+          <div className="empty-state">
+            <strong>No styles found</strong>
+            <span>Try a different search or category.</span>
+          </div>
+        )}
+      </div>
+    </AppLayout>
   );
 }

@@ -1,13 +1,13 @@
-// Style catalog repository — the "swap point" between a local data file now and
-// a database later. The backend and frontend only depend on this interface, so
-// replacing createLocalStyleCatalog() with createDbStyleCatalog() (reading, say,
-// Supabase) requires no change anywhere else.
+// Style catalog repository backed by Supabase. The public `styles` table holds
+// both official styles (seeded) and approved community styles; private columns
+// (prompt / generation_config) are readable only here — never via client RLS.
+
 import type {
   CommunityStyleRecord,
   StyleDefinition,
+  StyleStatus,
   StyleSubmission,
 } from '../../src/shared/style-types.js';
-import { STYLE_CATALOG } from '../../src/shared/styles-catalog.js';
 import { supabaseAdmin } from './supabase.js';
 import { ApiError } from './errors.js';
 
@@ -16,44 +16,98 @@ export interface StyleCatalog {
   get(id: string): Promise<StyleDefinition | undefined>;
 }
 
-/** In-memory catalog over the local data file. */
-export function createLocalStyleCatalog(): StyleCatalog {
-  const byId = new Map<string, StyleDefinition>();
-  for (const s of STYLE_CATALOG) {
-    byId.set(s.id, s);
-  }
-  const active = STYLE_CATALOG.filter((s) => s.status === 'active');
+interface StyleRow {
+  slug: string;
+  label: string;
+  description: string;
+  category: string;
+  tags: string[];
+  preview_image: string;
+  examples: string[] | null;
+  creator: string | null;
+  usage_count: number;
+  like_count: number;
+  is_premium: boolean;
+  status: string;
+  order: number;
+  prompt: string;
+  model: string | null;
+  generation_config: Record<string, unknown> | null;
+  created_at: string;
+}
 
+function toStyleDefinition(row: StyleRow): StyleDefinition {
+  return {
+    id: row.slug,
+    engine: 'cloud',
+    category: row.category,
+    tier: row.is_premium ? 'premium' : 'free',
+    source: row.creator ? 'community' : 'official',
+    status: row.status as StyleStatus,
+    label: row.label,
+    description: row.description,
+    sampleImage: row.preview_image,
+    examples: row.examples ?? [],
+    tags: row.tags ?? [],
+    order: row.order ?? 0,
+    author: row.creator ?? undefined,
+    isPremium: row.is_premium,
+    usageCount: row.usage_count,
+    likeCount: row.like_count,
+    model: row.model ?? undefined,
+    prompt: row.prompt,
+    providerOverrides: row.generation_config as StyleDefinition['providerOverrides'],
+  };
+}
+
+function requireAdmin() {
+  if (!supabaseAdmin) {
+    throw new ApiError('INTERNAL', 'Supabase service role is not configured');
+  }
+  return supabaseAdmin;
+}
+
+/** Supabase-backed style catalog (official + approved community). */
+export function createDbStyleCatalog(): StyleCatalog {
   return {
     async list() {
-      return [...active];
+      const db = requireAdmin();
+      const { data, error } = await db
+        .from('styles')
+        .select('*')
+        .eq('status', 'active')
+        .order('order', { ascending: true });
+      if (error) {
+        throw new ApiError('INTERNAL', `Failed to load styles: ${error.message}`);
+      }
+      return (data as StyleRow[]).map(toStyleDefinition);
     },
+
     async get(id) {
-      const s = byId.get(id);
-      return s && s.status === 'active' ? s : undefined;
+      const db = requireAdmin();
+      const { data, error } = await db
+        .from('styles')
+        .select('*')
+        .eq('slug', id)
+        .eq('status', 'active')
+        .maybeSingle();
+      if (error) {
+        throw new ApiError('INTERNAL', `Failed to load style: ${error.message}`);
+      }
+      return data ? toStyleDefinition(data as StyleRow) : undefined;
     },
   };
 }
 
 /** Singleton used by the /api endpoints. */
-export const styleCatalog: StyleCatalog = createLocalStyleCatalog();
+export const styleCatalog: StyleCatalog = createDbStyleCatalog();
 
-/**
- * Community style submission repository. Reserved for the Supabase backend:
- * implement `createDbCommunityStyleRepository()` reading/writing the
- * `public.user_styles` table (see supabase/migrations/0001_style_ecosystem.sql).
- *
- * Aggregation point: once the DB repository exists, `styleCatalog.list()` should
- * become `[...official, ...(await communityRepo.listApproved())]` so the catalog
- * and transform endpoints transparently serve both official and approved
- * community styles. Not wired up yet.
- */
+// ── Community style submissions (pre-approval staging) ─────────────
+
 export interface CommunityStyleRepository {
-  /** Submit a style (status becomes 'pending'). */
   create(userId: string, submission: StyleSubmission): Promise<CommunityStyleRecord>;
-  /** All submissions for a user. */
   listByUser(userId: string): Promise<CommunityStyleRecord[]>;
-  /** Approve (generates slug) or reject (sets reviewNote). */
+  get(id: string): Promise<CommunityStyleRecord | undefined>;
   review(styleId: string, decision: 'approved' | 'rejected', note?: string): Promise<void>;
 }
 
@@ -95,16 +149,6 @@ function toRecord(row: DbRow): CommunityStyleRecord {
 
 /** Supabase-backed community style repository (service_role bypasses RLS). */
 export function createDbCommunityStyleRepository(): CommunityStyleRepository {
-  const requireAdmin = () => {
-    if (!supabaseAdmin) {
-      throw new ApiError(
-        'INTERNAL',
-        'Supabase service role is not configured (set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)',
-      );
-    }
-    return supabaseAdmin;
-  };
-
   return {
     async create(userId, submission) {
       const db = requireAdmin();
@@ -143,6 +187,19 @@ export function createDbCommunityStyleRepository(): CommunityStyleRepository {
       return (data as DbRow[]).map(toRecord);
     },
 
+    async get(id) {
+      const db = requireAdmin();
+      const { data, error } = await db
+        .from('user_styles')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (error) {
+        throw new ApiError('INTERNAL', `Failed to load submission: ${error.message}`);
+      }
+      return data ? toRecord(data as DbRow) : undefined;
+    },
+
     async review(styleId, decision, note) {
       const db = requireAdmin();
       const patch: Record<string, unknown> =
@@ -155,6 +212,5 @@ export function createDbCommunityStyleRepository(): CommunityStyleRepository {
   };
 }
 
-/** Singleton used by the POST /api/styles endpoint. */
 export const communityStyleRepository: CommunityStyleRepository =
   createDbCommunityStyleRepository();

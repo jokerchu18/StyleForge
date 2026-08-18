@@ -5,6 +5,14 @@
     "api/transform.ts": { "maxDuration": 60, "memory": 1024 },
     "api/health.ts": { "maxDuration": 10, "memory": 256 },
     "api/styles.ts": { "maxDuration": 10, "memory": 256 },
-    "api/models.ts": { "maxDuration": 10, "memory": 256 }
+    "api/models.ts": { "maxDuration": 10, "memory": 256 },
+    "api/account.ts": { "maxDuration": 10, "memory": 256 },
+    "api/pricing.ts": { "maxDuration": 10, "memory": 256 },
+    "api/generations.ts": { "maxDuration": 10, "memory": 256 },
+    "api/saved-styles.ts": { "maxDuration": 10, "memory": 256 },
+    "api/style-review.ts": { "maxDuration": 10, "memory": 256 },
+    "api/my-styles.ts": { "maxDuration": 10, "memory": 256 },
+    "api/checkout.ts": { "maxDuration": 10, "memory": 256 },
+    "api/ls-webhook.ts": { "maxDuration": 10, "memory": 256 }
   }
 }

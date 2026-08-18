@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AppSidebar from '../components/studio/AppSidebar';
+import AppLayout from '../components/layout/AppLayout';
 import { en } from '../i18n/en';
-import type { Feature } from '../shared/styles';
 import { CATEGORY_PRESETS } from '../shared/styles-catalog';
 import { saveStyle } from '../lib/styles/saveStyle';
 import { useAuth } from '../hooks/useAuth';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 
 interface ReplicateModelOption {
   id: string;
@@ -13,7 +19,6 @@ interface ReplicateModelOption {
 }
 
 export default function CreateStylePage() {
-  const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
 
@@ -58,8 +63,6 @@ export default function CreateStylePage() {
     return () => URL.revokeObjectURL(url);
   }, [sampleImage]);
 
-  const goFeature = (f: Feature) => navigate(`/?feature=${f}`);
-
   const handleFile = (file: File | undefined) => {
     if (file && file.type.startsWith('image/')) {
       setSampleImage(file);
@@ -96,89 +99,114 @@ export default function CreateStylePage() {
   const busy = submitting || authLoading;
 
   return (
-    <div className="page page--app">
-      <AppSidebar
-        feature="browser"
-        onFeature={goFeature}
-        collapsed={collapsed}
-        onToggle={() => setCollapsed((c) => !c)}
-      />
-
-      <main className={`app-main landing-app-main${collapsed ? ' app-main--collapsed' : ''}`}>
+    <AppLayout>
+      <div className="landing-app-main">
         <div className="create-head">
+          <span className="landing-eyebrow">Community</span>
           <h1 className="hero-h1">{en.create.title}</h1>
           <p className="hero-sub">{en.create.subtitle}</p>
         </div>
 
         {!user && !authLoading ? (
-          <div className="create-card">
+          <div className="create-gate">
             <p className="error-text">{en.create.needLogin}</p>
           </div>
         ) : (
-          <div className="create-card">
-            <div className="create-grid">
-              <label className="create-field">
-                <span>{en.create.label}</span>
+          <div className="create-layout">
+            {/* Left — style information */}
+            <div className="create-form">
+              <div className="create-field">
+                <label htmlFor="create-label">{en.create.label}</label>
                 <input
+                  id="create-label"
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   placeholder={en.create.labelPlaceholder}
                   disabled={busy}
                 />
-              </label>
+              </div>
 
-              <label className="create-field">
-                <span>{en.create.category}</span>
-                <select value={category} onChange={(e) => setCategory(e.target.value)} disabled={busy}>
-                  {CATEGORY_PRESETS.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </label>
+              <div className="create-field">
+                <label htmlFor="create-category">{en.create.category}</label>
+                <Select value={category} onValueChange={setCategory} disabled={busy}>
+                  <SelectTrigger id="create-category" aria-label={en.create.category}>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORY_PRESETS.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c.charAt(0).toUpperCase() + c.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-              <label className="create-field create-field--full">
-                <span>{en.create.description}</span>
+              <div className="create-field">
+                <label htmlFor="create-desc">{en.create.description}</label>
                 <input
+                  id="create-desc"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={en.create.descriptionPlaceholder}
                   disabled={busy}
                 />
-              </label>
+              </div>
 
-              <label className="create-field create-field--full">
-                <span>{en.create.prompt}</span>
+              <div className="create-field">
+                <label htmlFor="create-prompt">{en.create.prompt}</label>
                 <textarea
+                  id="create-prompt"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder={en.create.promptPlaceholder}
-                  rows={4}
+                  rows={5}
                   disabled={busy}
                 />
-              </label>
+              </div>
 
-              <label className="create-field">
-                <span>{en.create.model}</span>
-                <select value={model} onChange={(e) => setModel(e.target.value)} disabled={busy}>
-                  {models.map((m) => (
-                    <option key={m.id} value={m.id}>{m.label}</option>
-                  ))}
-                </select>
-              </label>
+              <div className="create-field">
+                <label>{en.create.model}</label>
+                {models.length ? (
+                  <div className="model-grid">
+                    {models.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        className={`model-card${model === m.id ? ' selected' : ''}`}
+                        onClick={() => setModel(m.id)}
+                        disabled={busy}
+                      >
+                        <strong>{m.label}</strong>
+                        <small>{m.id}</small>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="model-empty">
+                    No models configured — set the REPLICATE_MODELS env var and
+                    restart the server.
+                  </p>
+                )}
+              </div>
 
-              <label className="create-field">
-                <span>{en.create.seed}</span>
+              <div className="create-field">
+                <label htmlFor="create-seed">{en.create.seed}</label>
                 <input
+                  id="create-seed"
                   type="number"
                   value={seed}
                   onChange={(e) => setSeed(e.target.value)}
                   placeholder={en.create.seedPlaceholder}
                   disabled={busy}
                 />
-              </label>
+              </div>
+            </div>
 
-              <div className="create-field create-field--full">
-                <span>{en.create.sampleImage}</span>
+            {/* Right — preview + submit */}
+            <div className="create-preview-panel">
+              <div className="create-field">
+                <label>{en.create.sampleImage}</label>
                 <input
                   ref={fileRef}
                   type="file"
@@ -193,28 +221,57 @@ export default function CreateStylePage() {
                   disabled={busy}
                 >
                   {preview ? (
-                    <img className="create-preview" src={preview} alt="Sample preview" />
+                    <img
+                      className="create-preview"
+                      src={preview}
+                      alt="Sample preview"
+                    />
                   ) : (
-                    <span>{en.create.sampleHint}</span>
+                    <span className="create-upload-empty">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path
+                          d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="m17 8-5-5-5 5"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M12 3v12"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <strong>Upload a sample image</strong>
+                      <small>{en.create.sampleHint}</small>
+                    </span>
                   )}
                 </button>
               </div>
+
+              {error && <p className="error-text">{error}</p>}
+              {success && <p className="success-text">Submitted for review — it will appear once approved.</p>}
+
+              <button
+                type="button"
+                className="btn-primary btn-lg create-submit"
+                onClick={handleSubmit}
+                disabled={busy}
+              >
+                {submitting ? en.create.submitting : en.create.submit}
+              </button>
             </div>
-
-            {error && <p className="error-text">{error}</p>}
-            {success && <p className="success-text">{en.create.success}</p>}
-
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={handleSubmit}
-              disabled={busy}
-            >
-              {submitting ? en.create.submitting : en.create.submit}
-            </button>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

@@ -1,8 +1,8 @@
-# photo_to_anime 项目维护文档
+# StyleForge 项目维护文档
 
-> **项目**: `D:\mywebsites\photo_to_anime`
-> **技术栈**: React 19 + TypeScript + Vite + onnxruntime-web
-> **用途**: 浏览器端本地运行的照片转动漫工具（AnimeGANv2），无上传、隐私优先
+> **项目**: `D:\mywebsites\StyleForge`
+> **技术栈**: React 19 + TypeScript + Vite（前端）+ Vercel Functions / Supabase（云端 API）
+> **用途**: 云端 AI 照片风格转换工具（Img2Img · Cloud），无浏览器本地模型
 > **本文件**: 记录本项目架构、关键决策与变更日志。每次改动后更新「变更日志」。
 
 ---
@@ -13,25 +13,167 @@
 
 | 模块 | 说明 |
 |------|------|
-| `src/lib/animeOnnx.ts` | onnxruntime-web 推理封装；WASM 从 `/ort/` 本地加载；session 按风格缓存 |
-| `src/lib/preprocess.ts` | 图片加载 → 等比缩放到最长边 512（对齐 8 倍数）→ 转 NHWC float32 [-1,1] |
-| `src/lib/postprocess.ts` | NHWC 输出张量（Tanh ~[-1,1]）→ canvas；PNG 下载 |
+| `src/lib/imageUtils.ts` | 上传图片加载、等比缩放（cloud 路径 1024）、PNG 下载 |
+| `src/lib/generate/client.ts` | 云端转换 API 客户端（`/api/transform`），按可用 provider 出图 |
 | `src/i18n/en.ts` | 全部界面文案（当前仅英文） |
-| `src/pages/HomePage.tsx` | 主流程：上传 → 选风格 → 推理 → 对比/下载 |
+| `src/pages/HomePage.tsx` | 主流程：上传 → 选云端风格 → transformImage → 对比/下载 |
 | `src/pages/SeoPage.tsx` | SEO 落地页（4 个 slug，BrowserRouter 路由） |
-| `public/models/` | 3 个 AnimeGANv2 ONNX 模型（Hayao/Shinkai/Paprika，各 ~8.6MB） |
-| `public/ort/` | onnxruntime-web WASM 文件（本地托管，避免 CDN 依赖） |
+| `api/` | Vercel Functions：`transform.ts`（风格转换）、`styles.ts`（目录）、`models.ts`（Create Style 模型列表）、`health.ts` |
+| `public/styles/api/` | 云端风格示例图（`/styles/api/*.png`） |
 
 ### 1.2 关键约定
 
-- **模型 I/O 布局**: AnimeGANv2 ONNX 为 **NHWC** `[1, H, W, 3]`，输入输出都需保持此布局（已验证模型元数据）
-- **输出归一化**: 模型输出为 Tanh（约 [-1,1]），转 canvas 时 `clamp255` 同时容忍 [0,255]
-- **本地优先**: WASM 与模型全部静态托管在 `public/`，首屏后离线可用
-- **隐私**: 所有推理在浏览器内完成，无任何上传
+- **纯云端推理**: 所有风格转换走 `POST /api/transform`（provider：replicate / dashscope / mock），浏览器不加载任何模型
+- **风格目录**: `src/shared/styles-catalog.ts`（纯数据）→ `api/_shared/styleCatalog.ts` 仓库接口；社区投稿存 Supabase
+- **单一 Feature**: `Feature = 'api'`，无 Local/Browser 模式；历史遗留的 `engine: 'local'` 相关代码已全部移除
 
 ---
 
 ## 二、变更日志
+
+### 2026-08-17 — Generations 计费 + Style 生态闭环 + 顶部导航重构
+
+**背景**：按下一阶段任务建立完整产品闭环：Generations 计费（不按 Style 收费）、Lemon Squeezy 支付（二期启用）、Style 全量迁库、前端顶部导航重构。**用户决策**：样式全量迁数据库；先核心闭环（计费+Style+前端重构），LS 代码完整实现但 env 占位。
+
+**数据库**（新增 `0003_billing.sql` / `0004_styles.sql` / `0005_storage.sql`）：
+- `credit_balances` + `credit_transactions` + `generations` + 原子 RPC（spend/refund/grant）+ 新用户引导 trigger（+10 Generations）+ `subscriptions` 扩展
+- `styles` 主表（官方 6 样式 seed + 社区 approved），**无客户端 RLS**（Prompt 只服务端读）；`saved_styles`；**drop `user_styles` 公开读策略**（堵 Prompt 直读漏洞）
+- `generations` 私有存储桶
+
+**后端**：
+- 新 `_shared/auth.ts`（getUserId 抽取）/ `pricing.ts`（唯一计费配置）/ `permissions.ts`（can* 层）/ `billing.ts`（预扣→生成→确认/退款事务）
+- `transform.ts`：**认证 + 计费**（402 余额不足、失败退款）+ 移除 `X-Generate-Prompt` 泄露头
+- `styles.ts` GET 改读 DB + search/category/sort；新 `style-review.ts`（批准写 styles + slug）、`my-styles.ts`、`account.ts`（余额+流水+权限）、`pricing.ts`、`generations.ts`（signed URL）、`saved-styles.ts`
+- **Lemon Squeezy**（二期启用，代码就位）：`ls.ts`（HMAC 验签）、`checkout.ts`、`ls-webhook.ts`（订阅事件 + 幂等发额）
+
+**前端**：
+- **取消左侧 Sidebar → 顶部导航**：`SiteHeader`（纯文字 StyleForge logo + Explore/Styles/Create/Pricing + ⚡ Generations + plan 徽章 + Avatar 菜单）+ `AppLayout`；删除 `AppSidebar.tsx`
+- 纯白背景 `#FFFFFF`；新 `/pricing`、`/account` 页；`ToolPage` 登录门禁 + "1 Generation" 提示 + 402 提示；**StyleDetail 移除 Show/Copy Prompt**；Explore 用真实 usage/like；My Creations 改数据库（删 localStorage `creations.ts`）；收藏（saved-styles）
+- 共享类型 `account-types.ts`/`pricing-types.ts`；hooks `useAccount`/`usePricing`；`lib/api.ts` authedFetch
+
+**验证**：tsc + oxlint + vite build 全绿；CDP 实测——纯白背景、顶部导航无 Sidebar、Pricing 三档卡片、Tool 未登录门禁、StyleDetail 无 Prompt 元素、logo 纯文字。**待用户执行**：在 Supabase 跑 3 个迁移 + 配 env（LS keys、STYLE_ADMIN_EMAILS）后，端到端计费/闭环才可用。
+
+---
+
+### 2026-08-17 — PromptHero-inspired 信息架构重构（黑白 UI）
+
+**背景**：将 StyleForge 从 "AI SaaS 工具页" 重构为图片优先的内容发现平台（搜索 + 高密度 Gallery + Style 详情 + 个人创作）。**不改任何 API / Supabase / 认证 / 图片生成逻辑**。颜色按要求改为**纯黑白灰**（去掉强调色）。
+
+**信息架构 / 路由**（`src/App.tsx`）：
+- `/` → **Home**（内容发现：紧凑标题 + 大搜索 + Featured/Trending/New 三段画廊）
+- `/tool` → Image to Image（原 HomePage 迁移改名 ToolPage，支持 `?style=` 预选）
+- `/explore` → 搜索 + 分类 + **排序**（Popular/Trending/Newest）高密度画廊
+- `/styles/:id` → **StyleDetail**（新：大图 + 元数据 + Prompt 展开/复制 + Related）
+- `/create` → Create Style（保留）
+- `/creations` → **My Creations**（新：localStorage 生成历史 + 下载/重试/删除）
+- `/blog`、SEO slug 保留；`/home` 重定向 `/`
+
+**组件**：
+- 新增 `TopNav`（分类快速浏览条）、`SortDropdown`（排序）、`PromptBlock` 并入 StyleDetail
+- 改造 `StyleCard`：Image-first 紧凑卡片，likes/uses 徽章（`src/lib/mockEngagement.ts` 确定性伪数据，无后端）、hover "Use Style"
+- `AppSidebar` 重构：全路由 Link 导航 + My Creations + 紧凑化
+- 删除死代码：`LandingPage.tsx`、`studio/Sidebar.tsx`、`studio/StyleSampleCard.tsx`
+
+**数据层**：`src/lib/creations.ts`（localStorage 生成记录，因无数据库表）
+
+**视觉**（黑白）：`--brand` 系改为近黑/浅灰；全部渐变改纯色；Hero 缩小（token 44px max）；grid 更密（minmax 180px）；Sidebar/卡片紧凑化；高密度留白
+
+**验证**：tsc + oxlint + vite build 全绿；CDP 实测——Home 三段画廊 + 搜索跳转 `/explore?q=sci` 过滤 1 张、Detail Prompt 展开/复制、sidebar 6 项、移动端 2 列 + 搜索纵向堆叠、body `#F7F5F0`。
+
+---
+
+### 2026-08-17 — 色彩系统换肤：粉色 → 暖色中性（Terracotta）
+
+**背景**：按新色板替换全站颜色，粉色品牌体系改为暖色中性系。
+
+**新色板**：
+- 背景 `#F7F5F0`（body/sidebar/header）、主文字 `#242321`、次文字 `#706D67`、按钮 `#242321` + 白字 `#FFFFFF`、强调色 `#B65F4A`、Active `#EAE6DE`、边框 `#DEDAD2`
+
+**改动**（`src/index.css`，只改 tokens，不改结构）：
+- `:root` 全量换色：pink scale 改成 terracotta 棕红 scale（`--pink-500: #b65f4a` 等）、`--brand*` 语义别名映射新强调色、`--text/text-secondary/text-muted` 新中性色、`--bg` 新增背景变量、`--btn-*` 新增按钮变量（深色按钮 + 白字）
+- `body` 背景 `var(--bg)`、`.app-sidebar`/`.header` 跟随 `#F7F5F0`、`.dropzone` 改白底以在米白背景上突出
+- `.btn-primary` 用 `--btn-bg`（深色按钮）替代原粉色按钮；`.btn-ghost` hover 用新 brand-soft
+
+**验证**：tsc + vite build 全绿；CDP 实测——body 背景 `rgb(247,245,240)`、主文字 `rgb(36,35,33)`、按钮 `rgb(36,35,33)` + 白字、强调渐变 `rgb(182,95,74)→rgb(138,66,48)`、active 导航 `rgb(234,230,222)`、卡片白底 + 边框 `rgb(222,218,210)`、无默认阴影。
+
+---
+
+### 2026-08-17 — 前端 UI/UX 全面重设计（AI Creative Platform）
+
+**背景**：将 StyleForge 从"工具页"重设计为现代、明亮、图片优先的 AI Style Platform。**不改业务逻辑**（API/Supabase/认证/图片生成/路由全部保留），只重设计前端视觉与布局。
+
+**Design System**（`src/index.css` 全量重写，~1400 行）：
+- 统一 Design Tokens：品牌粉 `--brand`（复用现有 pink 体系）、语义化中性色/边框/阴影/圆角/间距/排版 scale、`--sidebar-w` 布局变量
+- 白底、hairline 浅粉边框、16px 圆角、无默认阴影、品牌粉强调、hover 动画 180ms 克制
+
+**新增组件**：
+- `StyleCard.tsx`（统一样式卡片：预览图 + 名称 + 分类 + hover "Use Style" + 选中态 + compact 变体）
+- `StyleGrid.tsx`（响应式网格）、`SearchBar.tsx`（搜索输入）、`CategoryTabs.tsx`（分类筛选 pills）
+
+**页面重构**：
+- **Home (`/home`)**：Hero（大标题 + 品牌粉 accent + 双 CTA）+ "A style for every mood" StyleCard 画廊
+- **Image to Image (`/`)**：三步骤纵向流程（① Upload ② Choose a style ③ Transform），StyleCard 网格替代原右侧 Sidebar 选择器，busy 时保留页面稳定
+- **Explore (`/explore`)**：搜索框（前端过滤）+ 分类 Tabs + StyleCard 画廊 + 空状态
+- **Create Style (`/create`)**：左右两栏（左表单 + 右 sticky 预览/提交），复用模型卡片选择
+- **Blog (`/blog`)**：改造成 Journal 风格（封面图 + 分类 + 标题 + 摘要 + 日期卡片），统一使用全局 Sidebar
+- **Sidebar**：固定 240px、白底、浅粉边框、active 浅粉高亮、底部 Blog/Auth 固定
+
+**响应式**：≤900px sidebar 变顶部横向条（沿用现有方案并美化）；grid 桌面 3-4 列 / 平板 3 列 / 移动 2 列
+
+**验证**：`tsc -b` + `oxlint` + `vite build` 全绿；CDP 无头实测——Home/Explore/Create/Blog/SEO 各页 DOM 结构、Hero 字号 54px、StyleCard 圆角 16px/无默认阴影、active 导航浅粉、hover overlay 出现 + 卡片上移 + 图片放大、上传后预览 + Transform 按钮启用、搜索过滤、移动端 sidebar 横向 + grid 2 列。
+
+---
+
+### 2026-08-17 — Create Style 模型选择：修复 env 不热更新 + 卡片式美化
+
+**背景**：Create Style 的模型下拉不随后端 `REPLICATE_MODELS` 更新（dev 需重启才生效），且原生 `<select>` 样式朴素。
+
+**根因**：`vite.config.ts` 的 serveApi 用 `loadEnv('development', cwd, '')`（空前缀）加载 env——Vite 的 loadEnv 会把 `process.env` 读回覆盖解析结果，而 reloadEnv 又用 loadEnv 更新 process.env，形成鸡生蛋，process.env 永远冻结在首次加载值。
+
+**修复**：
+- `vite.config.ts`：serveApi 改为每次 `/api` 请求直接 `parseEnv()`（node:util）解析 `.env` → `.env.local` 并写入 `process.env`，改 env 立即生效、无需重启 dev server
+- `src/pages/CreateStylePage.tsx`：模型选择由原生 `<select>` 改为卡片式单选（`model-card` 按钮组，显示 `label` + 完整 `model id` 小字，数据仍来自 `/api/models`）；`REPLICATE_MODELS` 为空时显示提示而非空白；seed 字段改 full width 对齐布局
+- `src/index.css`：新增 `.model-grid` / `.model-card` / `.model-empty`（选中态粉色高亮）；`@media (max-width:640px)` 下网格单列
+
+**验证**：tsc -b + vite build + oxlint 全绿；实测 dev 运行中修改 `.env.local` 的 `REPLICATE_MODELS`，`/api/models` 立即返回新列表、恢复后立即还原；CDP 打开 `/create` 确认侧边栏 "Image to Image"、页面无 console 错误。
+
+---
+
+### 2026-08-17 — Image to Image UI 调整：改名 + 操作按钮常驻 + 原图预览
+
+**背景**：Cloud-only 后统一 Image to Image 交互——导航去掉 "Cloud" 后缀改为完整名；生成按钮不再等上传后才出现，而是常驻底部；上传后用户可看到自己的原图大预览。
+
+**改动**：
+- `src/i18n/en.ts`：`featureApi` 改为 "Image to Image"，`featureApiHint` 改为 "AI style transfer"
+- `src/components/studio/AppSidebar.tsx`：导航 title 改为 "Image to Image"
+- `src/pages/HomePage.tsx`：studio-tool 重构——上传后显示 `photo-preview` 大图预览（data URL）+ 文件名/尺寸 + 替换按钮；底部新增常驻 `.studio-actions` 操作栏（生成按钮未上传或 busy 时禁用，已上传可点；done 态由 ResultCompare 自带按钮接管）
+- `src/index.css`：新增 `.photo-preview*`（预览图容器/大图/元信息行）与 `.studio-actions`（`margin-top: auto` 沉底）+ 按钮 disabled 态
+
+**验证**：tsc -b + vite build 全绿；CDP 无头实测——初始态上传区 + 底部生成按钮（禁用）常驻；模拟上传后大图预览渲染、按钮变为可点、文件名/尺寸正确、导航显示 "Image to Image"。
+
+---
+
+### 2026-08-17 — 移除浏览器本地模型功能，仅保留云端 API
+
+**背景**：按需求完全删除浏览器端本地 ONNX 推理（AnimeGANv2 / onnxruntime-web）及 Local 模式，产品只剩「Img2Img · Cloud」单一云端路径。
+
+**改动（功能删除）**：
+- 删除 `src/lib/animeOnnx.ts`（onnxruntime-web 推理封装）、`src/lib/preprocess.ts`、`src/lib/postprocess.ts`；新建 `src/lib/imageUtils.ts`（上传加载/缩放/PNG 下载）
+- `src/shared/styles-catalog.ts`：删除 hayao/shinkai/paprika 三个 `engine: 'local'` 样式（仅保留 cloud 样式）
+- `src/shared/style-types.ts`：`StyleEngine` 收窄为 `'cloud'`；删除 `StyleDefinition.model` 字段（local-only）
+- `src/shared/styles.ts`：`Feature` 收窄为 `'api'`；删除死代码 `featureToMode`
+- `src/pages/HomePage.tsx`：删除本地推理分支（processLocal/getSession/runAnime/tensor 管线），只留 uploadBlob → transformImage 云端路径；去掉 `feature` 状态与 `?feature=` URL 参数
+- `src/components/studio/AppSidebar.tsx`：删除「Img2Img — Local」导航，移除 `feature` prop
+- `src/components/studio/Sidebar.tsx`：移除 `feature` prop，hint 固定为 cloud
+- `src/pages/LandingPage.tsx` / `ExplorePage.tsx` / `CreateStylePage.tsx`：删除 Local/On-device 卡片、local engine 筛选、`feature=` 跳转参数
+- 删除静态资源：`public/models/*.onnx`（3 个模型）、`public/ort/`（WASM）、`public/styles/local/`；`scripts/generate.mjs`（本地 ONNX 推理测试脚本）
+- `package.json`：移除 `onnxruntime-web` 依赖；`vite.config.ts`：删除 serve-ort-loaders 插件
+
+**改动（文案/SEO 同步）**：`index.html` meta/OG、`src/i18n/en.ts`（featureBrowser/browserMode/browserStyle* 删除，homeHeroPoints/howStepHints/privacyItems/seo 等改为云端语义）、`src/pages/SeoPage.tsx`/`BlogPage.tsx` 落地页文案、Header 默认 pill 改为 cloud。
+
+**验证**：`tsc -b` + `vite build` 全绿；dist 不再包含 onnxruntime WASM/模型。
+
+---
 
 ### 2026-08-17 — 模型列表改为环境变量配置（/api/models）
 

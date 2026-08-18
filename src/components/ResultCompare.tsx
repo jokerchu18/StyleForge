@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { en } from '../i18n/en';
-import { downloadCanvas } from '../lib/postprocess';
+import { downloadCanvas } from '../lib/imageUtils';
 
 interface Props {
   original: HTMLCanvasElement;

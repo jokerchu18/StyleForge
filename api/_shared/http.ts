@@ -18,6 +18,12 @@ async function readBody(req: IncomingMessage): Promise<Buffer> {
   return Buffer.concat(chunks);
 }
 
+/** Read the raw request body as a string (webhook signature verification). */
+export async function readRawBody(req: IncomingMessage): Promise<string> {
+  const raw = await readBody(req);
+  return raw.toString('utf-8');
+}
+
 /** Read and JSON-parse a request body (Vercel allows 4.5MB). */
 export async function readJsonBody(req: IncomingMessage): Promise<unknown> {
   const raw = await readBody(req);
@@ -52,23 +58,27 @@ export interface ImagePayload {
   width?: number;
   height?: number;
   model?: string;
-  prompt?: string;
   provider?: string;
   seed?: number;
   styleId?: string;
+  /** Charged generation id (billing integration). */
+  generationId?: string;
+  costUnits?: number;
 }
 
-/** Write a binary image straight back (no base64 bloat). */
+/** Write a binary image straight back (no base64 bloat).
+ *  NOTE: never echoes a prompt here — prompts must not reach the browser. */
 export function sendImage(res: ServerResponse, img: ImagePayload): void {
   res.statusCode = 200;
   res.setHeader('Content-Type', img.mime);
   res.setHeader('X-Generate-Provider', img.provider ?? '');
   res.setHeader('X-Generate-Model', img.model ?? '');
-  res.setHeader('X-Generate-Prompt', encodeURIComponent(img.prompt ?? ''));
   if (img.width !== undefined) res.setHeader('X-Generate-Width', String(img.width));
   if (img.height !== undefined) res.setHeader('X-Generate-Height', String(img.height));
   if (img.seed !== undefined) res.setHeader('X-Generate-Seed', String(img.seed));
   if (img.styleId !== undefined) res.setHeader('X-Generate-Style', img.styleId);
+  if (img.generationId !== undefined) res.setHeader('X-Generation-Id', img.generationId);
+  if (img.costUnits !== undefined) res.setHeader('X-Generation-Cost', String(img.costUnits));
   res.end(Buffer.from(img.bytes));
 }
 

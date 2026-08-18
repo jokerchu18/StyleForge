@@ -37,16 +37,26 @@ export const replicateProvider: ImageProvider = {
     const model = overrides?.model ?? process.env.REPLICATE_MODEL;
     const version = overrides?.version ?? process.env.REPLICATE_MODEL_VERSION;
 
-    if (!model && !version) {
+    // Replicate's prediction API now requires an exact `version` hash and
+    // rejects the legacy `model` field. Resolve it from an explicit version,
+    // or extract it from an "owner/name:version" model string.
+    let resolvedVersion = version ?? '';
+    if (!resolvedVersion && model) {
+      const idx = model.lastIndexOf(':');
+      if (idx >= 0) resolvedVersion = model.slice(idx + 1);
+    }
+    if (!resolvedVersion) {
       throw new ApiError(
         'UPSTREAM_ERROR',
-        'Replicate model/version is not configured (set REPLICATE_MODEL or providerOverrides.replicate)',
+        'Replicate version is required — set REPLICATE_MODEL_VERSION or REPLICATE_MODEL="owner/name:version"',
         'replicate',
       );
     }
 
-    const imageKey = overrides?.imageKey ?? 'image';
-    const promptKey = overrides?.promptKey ?? 'prompt';
+    const imageKey =
+      overrides?.imageKey ?? process.env.REPLICATE_IMAGE_KEY ?? 'image';
+    const promptKey =
+      overrides?.promptKey ?? process.env.REPLICATE_PROMPT_KEY ?? 'prompt';
     const dataUri = `data:${opts.mime};base64,${Buffer.from(opts.imageBytes).toString('base64')}`;
 
     const input: Record<string, unknown> = {
@@ -56,9 +66,7 @@ export const replicateProvider: ImageProvider = {
     if (opts.style.prompt) input[promptKey] = opts.style.prompt;
     if (overrides?.seed != null) input.seed = overrides.seed;
 
-    const body: Record<string, unknown> = { input };
-    if (version) body.version = version;
-    else if (model) body.model = model;
+    const body: Record<string, unknown> = { input, version: resolvedVersion };
 
     const deadline = Date.now() + generateTimeoutMs();
 
@@ -83,7 +91,7 @@ export const replicateProvider: ImageProvider = {
 
     const prediction = (await createRes.json()) as PredictionResponse;
     if (prediction.status === 'succeeded') {
-      return downloadOutput(prediction.output, model ?? version ?? 'replicate');
+      return downloadOutput(prediction.output, model ?? resolvedVersion);
     }
     if (prediction.status === 'failed') {
       throw new ApiError(
@@ -113,7 +121,7 @@ export const replicateProvider: ImageProvider = {
       }
       const p = (await pollRes.json()) as PredictionResponse;
       if (p.status === 'succeeded') {
-        return downloadOutput(p.output, model ?? version ?? 'replicate');
+        return downloadOutput(p.output, model ?? resolvedVersion);
       }
       if (p.status === 'failed' || p.status === 'canceled') {
         throw new ApiError(

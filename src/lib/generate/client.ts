@@ -4,6 +4,41 @@ import type {
   HealthResponse,
   StyleTransformRequest,
 } from '../../shared/generate-types';
+import { supabase } from '../supabase';
+
+/** Current Supabase access token, or null when signed out. */
+export async function getAccessToken(): Promise<string | null> {
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  const session = data.session;
+  if (!session) return null;
+  if (tokenExpiresSoon(session.access_token)) {
+    const { data: refreshed, error } = await supabase.auth.refreshSession({
+      refresh_token: session.refresh_token,
+    });
+    if (!error && refreshed.session) {
+      return refreshed.session.access_token;
+    }
+    // Refresh failed — fall through and return the stale token; the server
+    // rejects it with a clear auth error if it is genuinely dead.
+  }
+  return session.access_token;
+}
+
+/** True when a JWT's `exp` is within `thresholdMs` of now (or unreadable). */
+function tokenExpiresSoon(token: string, thresholdMs = 60_000): boolean {
+  try {
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return true;
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+    const payload = JSON.parse(atob(padded)) as { exp?: number };
+    if (typeof payload.exp !== 'number') return true;
+    return payload.exp * 1000 < Date.now() + thresholdMs;
+  } catch {
+    return true;
+  }
+}
 
 export class GenerateClientError extends Error {
   readonly code: GenerateErrorCode;
@@ -22,9 +57,10 @@ export interface GenerateResultData {
   mime: string;
   provider: string;
   model: string;
-  prompt: string;
   width?: number;
   height?: number;
+  generationId?: string;
+  costUnits?: number;
 }
 
 async function parseErrorResponse(res: Response): Promise<GenerateClientError> {
@@ -58,9 +94,13 @@ export async function transformImage(
   if (req.provider) params.set('provider', req.provider);
   if (req.quality) params.set('quality', req.quality);
 
+  const token = await getAccessToken();
   const res = await fetch(`/api/transform?${params.toString()}`, {
     method: 'POST',
-    headers: { 'Content-Type': imageBlob.type || 'application/octet-stream' },
+    headers: {
+      'Content-Type': imageBlob.type || 'application/octet-stream',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: imageBlob,
   });
 
@@ -74,9 +114,10 @@ export async function transformImage(
     mime: get('content-type') || imageBlob.type || 'image/png',
     provider: get('x-generate-provider'),
     model: get('x-generate-model'),
-    prompt: decodeURIComponent(get('x-generate-prompt')),
     width: numOrUndefined(get('x-generate-width')),
     height: numOrUndefined(get('x-generate-height')),
+    generationId: get('x-generation-id') || undefined,
+    costUnits: numOrUndefined(get('x-generation-cost')),
   };
 }
 

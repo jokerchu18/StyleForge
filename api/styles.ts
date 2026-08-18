@@ -3,15 +3,12 @@
 // server), so the response only carries what the UI needs to render.
 //
 // POST accepts an authenticated StyleSubmission and stores it as pending.
-// Reserved (not implemented yet):
-//   PATCH  /api/styles/:id/review — admin approves/rejects
-//   GET    /api/styles/mine       — the current user's submissions
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { PublicStyleDefinition, StyleDefinition, StyleEngine, StyleCategory, StyleTier, StyleSubmission } from '../src/shared/style-types.js';
+import type { PublicStyleDefinition, StyleDefinition, StyleCategory, StyleSubmission } from '../src/shared/style-types.js';
 import { CATEGORY_PRESETS } from '../src/shared/styles-catalog.js';
 import { sendJson, methodNotAllowed, readJsonBody } from './_shared/http.js';
 import { styleCatalog, communityStyleRepository } from './_shared/styleCatalog.js';
-import { supabaseAdmin } from './_shared/supabase.js';
+import { getUserId } from './_shared/auth.js';
 import { ApiError, sendError } from './_shared/errors.js';
 
 function parseQuery(url: string | undefined): Record<string, string> {
@@ -25,22 +22,6 @@ function toPublic(style: StyleDefinition): PublicStyleDefinition {
   return rest;
 }
 
-async function getUserId(req: IncomingMessage): Promise<string> {
-  if (!supabaseAdmin) {
-    throw new ApiError('INTERNAL', 'Supabase service role is not configured');
-  }
-  const auth = req.headers.authorization;
-  const token = auth?.startsWith('Bearer ') ? auth.slice(7) : undefined;
-  if (!token) {
-    throw new ApiError('BAD_REQUEST', 'Missing bearer token');
-  }
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
-  if (error || !data.user) {
-    throw new ApiError('BAD_REQUEST', 'Invalid or expired token');
-  }
-  return data.user.id;
-}
-
 export default async function handler(
   req: IncomingMessage,
   res: ServerResponse,
@@ -50,17 +31,33 @@ export default async function handler(
 
     if (method === 'GET') {
       const query = parseQuery(req.url);
-      const engine = query.engine as StyleEngine | undefined;
       const category = query.category as StyleCategory | undefined;
-      const tier = query.tier as StyleTier | undefined;
+      const search = (query.search ?? '').trim().toLowerCase();
+      const sort = query.sort ?? 'popular';
 
       const all = await styleCatalog.list();
-      const styles = all.filter((s) => {
-        if (engine && s.engine !== engine) return false;
+      let styles = all.filter((s) => {
         if (category && s.category !== category) return false;
-        if (tier && s.tier !== tier) return false;
+        if (search) {
+          const haystack = [
+            s.label ?? '',
+            s.description ?? '',
+            s.category,
+            (s.tags ?? []).join(' '),
+          ]
+            .join(' ')
+            .toLowerCase();
+          if (!haystack.includes(search)) return false;
+        }
         return true;
       });
+
+      if (sort === 'newest') {
+        styles = [...styles].sort((a, b) => (b.order ?? 0) - (a.order ?? 0));
+      } else {
+        // popular / trending — live usage count.
+        styles = [...styles].sort((a, b) => (b.usageCount ?? 0) - (a.usageCount ?? 0));
+      }
 
       const present = new Set(styles.map((s) => s.category));
       const categories = [

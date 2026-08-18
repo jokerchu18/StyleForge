@@ -19,6 +19,7 @@ export type GenerateErrorCode =
   | 'UPSTREAM_RATE_LIMITED'
   | 'UPSTREAM_TIMEOUT'
   | 'UPSTREAM_ERROR'
+  | 'INSUFFICIENT_GENERATIONS'
   | 'INTERNAL';
 
 export interface HealthResponse {

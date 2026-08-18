@@ -1,28 +1,21 @@
 // Feature/mode helpers and style metadata resolution for the frontend.
-// The authoritative style list now lives in styles-catalog.ts (served by
-// /api/styles); this module only carries UI plumbing.
+// The authoritative style list now lives in the database (served by /api/styles).
 
-import { en } from '../i18n/en';
 import type { StyleDefinition } from './style-types';
 
-/** Top-level tool selector: on-device (local) vs cloud (API). */
-export type Feature = 'browser' | 'api';
-
-/** Map a feature to the engine it uses. */
-export function featureToMode(feature: Feature): 'local' | 'cloud' {
-  return feature === 'browser' ? 'local' : 'cloud';
-}
+/** Top-level tool selector: only cloud (API) is supported now. */
+export type Feature = 'api';
 
 export interface StyleMeta {
   label: string;
   description: string;
 }
 
-/** Resolve a style's display label/description from i18n (single source). */
+/** Resolve a style's display label/description. DB styles carry text fields;
+ *  legacy static styles fall back to i18n keys. */
 export function resolveStyleMeta(style: StyleDefinition): StyleMeta {
-  const entry = en.styles[style.id as keyof typeof en.styles];
   return {
-    label: entry?.label ?? style.labelKey ?? style.id,
-    description: entry?.description ?? '',
+    label: style.label ?? style.labelKey ?? style.id,
+    description: style.description ?? style.descriptionKey ?? '',
   };
 }

@@ -5,7 +5,7 @@
 
 import type { ProviderId } from './generate-types.js';
 
-export type StyleEngine = 'local' | 'cloud';
+export type StyleEngine = 'cloud';
 export type StyleTier = 'free' | 'premium';
 export type StyleSource = 'official' | 'community';
 export type StyleStatus = 'active' | 'draft' | 'archived';
@@ -51,9 +51,9 @@ export interface ProviderStyleOverrides extends ReplicateStyleOverrides {
 }
 
 export interface StyleDefinition {
-  /** Slug, e.g. 'anime' | 'hayao'. */
+  /** Slug, e.g. 'anime'. */
   id: string;
-  /** Local ONNX (in-browser) vs cloud API. */
+  /** Cloud API engine (all styles are cloud-powered). */
   engine: StyleEngine;
   category: StyleCategory;
   /** free / premium — gating field, not enforced yet. */
@@ -62,14 +62,28 @@ export interface StyleDefinition {
   source: StyleSource;
   /** active / draft / archived — moderation & listing control. */
   status: StyleStatus;
-  /** i18n key into en.styles[id].label. */
-  labelKey: string;
-  /** i18n key into en.styles[id].description. */
-  descriptionKey: string;
+  /** i18n key into en.styles[id].label (legacy; DB styles use `label`). */
+  labelKey?: string;
+  /** i18n key into en.styles[id].description (legacy; DB styles use `description`). */
+  descriptionKey?: string;
+  /** Display label (DB-backed styles set this directly). */
+  label?: string;
+  /** One-line description (DB-backed styles set this directly). */
+  description?: string;
   sampleImage: string;
+  /** Example gallery images (beyond the preview). */
+  examples?: string[];
   tags?: string[];
   order?: number;
   author?: string;
+  /** Premium gate — Free can see but not use. */
+  isPremium?: boolean;
+  /** Live usage counter (server-maintained). */
+  usageCount?: number;
+  /** Live like counter (server-maintained). */
+  likeCount?: number;
+  /** Recommended model id ('auto' = provider decides). Server-side hint. */
+  model?: string;
   /**
    * Cloud-only: authoritative style instruction. Resolved server-side only;
    * never sent to the browser.
@@ -77,8 +91,6 @@ export interface StyleDefinition {
   prompt?: string;
   /** Cloud-only: per-provider knobs (kept out of the shared shape). */
   providerOverrides?: Partial<Record<ProviderId, ProviderStyleOverrides>>;
-  /** Local-only: model file stem, loaded from /models/{model}.onnx. */
-  model?: string;
 }
 
 /** GET /api/styles response body. */

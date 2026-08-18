@@ -1,7 +1,7 @@
 export const en = {
   appName: 'StyleForge',
-  tagline: 'Turn your photos into anime in seconds. 100% private.',
-  privacyPill: '100% Private',
+  tagline: 'Turn your photos into anime in seconds.',
+  privacyPill: 'Cloud AI',
   navHome: 'Home',
   navTools: 'Tools',
   navBlog: 'Blog',
@@ -13,18 +13,16 @@ export const en = {
   appNavTools: 'Tools',
   appNavBlog: 'Blog',
   appNavBlogHint: 'Guides & updates',
-  featureBrowser: 'Img2Img · Local',
-  featureBrowserHint: 'On-device anime styles',
-  featureApi: 'Img2Img · Cloud',
-  featureApiHint: 'Cloud AI styles',
+  featureApi: 'Image to Image',
+  featureApiHint: 'AI style transfer',
   landingNavFeatures: 'Features',
   landingNavStyles: 'Styles',
-  landingFeaturesTitle: 'Two ways to transform your photos',
+  landingFeaturesTitle: 'Transform your photos with AI',
   landingFeaturesSubtitle:
-    'Run styles entirely on your device for privacy, or let cloud AI reimagine your image.',
+    'Cloud AI reimagines your image with a wide range of styles — no setup, no account.',
   landingStylesTitle: 'A style for every mood',
   landingStylesSubtitle:
-    'From on-device anime looks to cloud sci-fi, oil painting, watercolor and more.',
+    'From anime looks to sci-fi, oil painting, watercolor and more.',
   landingCta: 'Start converting',
 
   blog: {
@@ -39,14 +37,14 @@ export const en = {
     'A free AI photo stylizer that reimagines your images in seconds — turn everyday photos into sci-fi scenes, anime art, oil paintings, sketches, watercolor and more. Pick a style, hit go, and download the result.',
   homeHeroPoints: [
     'Sci-fi, anime & more — one-click styles',
-    'On-device styles never upload your photo',
+    'Cloud AI transforms your photo in seconds',
     'Free to use, no account needed',
   ],
   homeHeroCta: 'Start converting',
 
   stylesSectionTitle: 'Explore the style library',
   stylesSectionSubtitle:
-    'From on-device anime looks to cloud sci-fi and classic painting styles — pick the one that fits your photo.',
+    'From anime looks to sci-fi and classic painting styles — pick the one that fits your photo.',
   howSectionTitle: 'How it works',
   howSteps: [
     'Upload your photo',
@@ -56,8 +54,8 @@ export const en = {
   ],
   howStepHints: [
     'Drag & drop or browse any JPG, PNG or WebP up to 10MB.',
-    'Browse on-device and cloud styles in the sidebar.',
-    'On-device styles run locally; cloud styles use an AI provider.',
+    'Browse cloud AI styles in the sidebar.',
+    'Cloud styles transform your photo with an AI provider.',
     'Export a high-quality PNG straight to your device.',
   ],
 
@@ -67,7 +65,7 @@ export const en = {
   replaceHint: 'Replace photo',
 
   styleTitle: 'Choose a style',
-  styleHint: 'The first use of each style loads its model (~8 MB), then it is cached.',
+  styleHint: 'Pick a style and transform your photo with cloud AI.',
   styles: {
     hayao: { label: 'Hayao', description: 'Ghibli-like' },
     shinkai: { label: 'Shinkai', description: 'Vivid & colorful' },
@@ -80,40 +78,50 @@ export const en = {
     watercolor: { label: 'Watercolor', description: 'Soft painted washes' },
   },
 
-  loadingModel: 'Loading model…',
-  processing: 'Processing… running locally on your device',
+  loadingModel: 'Preparing…',
+  processing: 'Processing…',
   download: 'Download PNG',
-  runButton: 'Anime this photo',
+  runButton: 'Transform this photo',
   tryAgain: 'Try another photo',
 
   compareOriginal: 'Original',
   compareResult: 'Anime',
 
   errorInvalidImage: 'Please choose a valid image file.',
-  errorModel: 'Failed to load the model. Check your connection and try again.',
+  errorModel: 'Failed to reach the AI service. Check your connection and try again.',
   errorProcess: 'Something went wrong while processing. Please try again.',
+  errorInsufficientGenerations:
+    'Not enough Generations. Upgrade or wait for your monthly refresh.',
+  errorProviderNotConfigured:
+    'The AI service is not configured. Please try again later.',
+  errorRateLimited:
+    'The AI service is busy right now. Please wait a moment and try again.',
+  errorTimeout:
+    'The AI service took too long to respond. Please try again.',
+  errorUpstream:
+    'The AI service hit a problem. Please try again.',
+  errorBadRequest:
+    'That request could not be processed. Please try a different photo.',
+  errorSessionExpired: 'Your session has expired. Please sign in again.',
 
   modeTitle: 'Processing mode',
-  browserMode: 'Browser',
   apiMode: 'API',
-  browserStyleTitle: 'On-device styles',
-  browserStyleHint: 'Runs locally — your photo never leaves your device.',
   apiStyleTitle: 'Cloud styles',
-  apiStyleHint: 'Your photo is sent to an AI provider for this mode.',
+  apiStyleHint: 'Your photo is transformed by a cloud AI provider.',
   apiRunButton: 'Transform this photo',
   apiProcessing: 'Transforming… sending your photo to an AI provider',
   transformLabel: 'Transform',
 
-  privacyTitle: 'Your privacy is the point.',
+  privacyTitle: 'Simple and transparent.',
   privacyItems: [
-    'No upload — photos are processed entirely in your browser',
-    'No account, no tracking of your images',
-    'No server — the app is a static site + local AI model',
+    'Photos are sent to an AI provider only when you transform them',
+    'No account required to use the tool',
+    'Your creations are yours to download',
   ],
 
   seo: {
     description:
-      'Turn your photos into anime art instantly in your browser. Free, private, no upload — choose from Hayao, Shinkai and Paprika styles.',
+      'Turn your photos into anime, sci-fi, oil painting, sketch and watercolor art instantly with cloud AI. Free — choose from a growing style library.',
   },
 
   create: {
