@@ -4,27 +4,19 @@ import { useAuth } from '../../hooks/useAuth';
 import { useAccount } from '../../hooks/useAccount';
 
 const NAV = [
-  { to: '/', hash: '#hero',          label: 'Home' },
-  { to: '/', hash: '#style-transfer', label: 'Style Transfer' },
-  { to: '/', hash: '#ai-styles',      label: 'AI Styles' },
-  { to: '/', hash: '#create-style',   label: 'Create Style' },
-  { to: '/', hash: '#blog',           label: 'Blog' },
-  { to: '/', hash: '#pricing',        label: 'Pricing' },
+  { to: '/', label: 'Home' },
+  { to: '/image-to-image', label: 'Image to Image' },
+  { to: '/all-styles', label: 'All Styles' },
+  { to: '/create-style', label: 'Create Style' },
+  { to: '/blog', label: 'Blog' },
+  { to: '/pricing', label: 'Pricing' },
 ] as const;
-
-function scrollToSection(hash: string) {
-  const el = document.querySelector(hash);
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-}
 
 export default function SiteHeader() {
   const { user, loading, signOut, signInWithGoogle } = useAuth();
   const { account } = useAccount();
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activeHash, setActiveHash] = useState('#hero');
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,63 +33,42 @@ export default function SiteHeader() {
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  // Track active section via IntersectionObserver
-  useEffect(() => {
-    if (pathname !== '/') return;
-    const ids = NAV.map((n) => n.hash.slice(1));
-    const observers: IntersectionObserver[] = [];
-    ids.forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const obs = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) setActiveHash(`#${id}`);
-        },
-        { threshold: 0.3 },
-      );
-      obs.observe(el);
-      observers.push(obs);
-    });
-    return () => observers.forEach((o) => o.disconnect());
-  }, [pathname]);
-
-  const handleNavClick = (e: React.MouseEvent, hash: string) => {
-    if (pathname === '/') {
-      e.preventDefault();
-      scrollToSection(hash);
-      setActiveHash(hash);
-    }
-  };
+  const isActive = (to: string) =>
+    to === '/' ? pathname === '/' : pathname.startsWith(to);
 
   return (
     <header className="site-header">
       <div className="site-header-inner">
-        <Link to="/" className="site-logo" onClick={(e) => handleNavClick(e, '#hero')}>
+        <Link to="/" className="site-logo">
           StyleForge
         </Link>
 
         <nav className="site-nav" aria-label="Primary">
           {NAV.map((item) => (
-            <a
-              key={item.hash}
-              href={pathname === '/' ? item.hash : `/${item.hash}`}
-              className={`site-nav-link${pathname === '/' && activeHash === item.hash ? ' active' : ''}`}
-              onClick={(e) => handleNavClick(e, item.hash)}
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`site-nav-link${isActive(item.to) ? ' active' : ''}`}
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
         <div className="site-header-right">
           {!loading && user && account && (
-            <Link to="/account" className="generations-chip" title="Generation History">
-              <span className="generations-bolt" aria-hidden="true">⚡</span>
-              <span>{account.balance} Generations</span>
-              {account.plan !== 'free' && (
-                <span className="plan-badge">{account.planLabel}</span>
-              )}
-            </Link>
+            <>
+              <span className="user-greeting">
+                {user.user_metadata?.name?.split(' ')[0] ?? user.email?.split('@')[0] ?? 'User'}
+              </span>
+              <Link to="/account" className="generations-chip" title="Credit balance">
+                <span className="generations-bolt" aria-hidden="true">⚡</span>
+                <span>{account.balance} Credits</span>
+                {account.plan !== 'free' && (
+                  <span className="plan-badge">{account.planLabel}</span>
+                )}
+              </Link>
+            </>
           )}
 
           <div className="avatar-menu" ref={menuRef}>
@@ -130,11 +101,11 @@ export default function SiteHeader() {
                   <strong>{user?.user_metadata?.name ?? user?.email ?? 'User'}</strong>
                   <span>{account?.planLabel ?? 'Free'}</span>
                 </div>
-                <Link to="/account" className="avatar-dropdown-item">
+                <Link to="/creations" className="avatar-dropdown-item">
                   My Creations
                 </Link>
                 <Link to="/account" className="avatar-dropdown-item">
-                  Generation History
+                  Account & Credits
                 </Link>
                 <button
                   type="button"

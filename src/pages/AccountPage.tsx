@@ -24,7 +24,6 @@ export default function AccountPage() {
     <AppLayout>
       <div className="account">
         <div className="account-head">
-          <span className="landing-eyebrow">Your account</span>
           <h1 className="hero-h1">My Account</h1>
         </div>
 
@@ -38,21 +37,21 @@ export default function AccountPage() {
               <div className="account-balance">
                 <span className="generations-bolt" aria-hidden="true">⚡</span>
                 <span className="account-balance-num">{account?.balance ?? 0}</span>
-                <span className="account-balance-label">Generations</span>
+                <span className="account-balance-label">Credits</span>
               </div>
               <div className="account-plan">
                 <span className={`plan-badge plan-badge--${account?.plan ?? 'free'}`}>
                   {account?.planLabel ?? 'Free'}
                 </span>
                 <span className="account-plan-month">
-                  {account?.monthlyGenerations ?? 10} / month
+                  {account?.monthlyGenerations ?? 40} credits / month
                 </span>
               </div>
             </div>
 
             <section className="account-section">
               <div className="section-head">
-                <h2>Generation History</h2>
+                <h2>Credit History</h2>
               </div>
               {account?.transactions?.length ? (
                 <div className="tx-list">
@@ -71,7 +70,7 @@ export default function AccountPage() {
               ) : (
                 <div className="empty-state">
                   <strong>No activity yet</strong>
-                  <span>Generate an image and it will show up here.</span>
+                  <span>Generate an image and your credits will show up here.</span>
                 </div>
               )}
             </section>

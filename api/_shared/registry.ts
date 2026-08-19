@@ -1,14 +1,12 @@
 import type { ProviderId } from '../../src/shared/generate-types.js';
 import type { ImageProvider } from './provider.js';
 import { ApiError } from './errors.js';
-import { openaiProvider } from '../providers/openai.js';
 import { dashscopeProvider } from '../providers/dashscope.js';
 import { seedreamProvider } from '../providers/seedream.js';
 import { replicateProvider } from '../providers/replicate.js';
 import { mockProvider } from '../providers/mock.js';
 
 export const PROVIDERS: Record<ProviderId, ImageProvider> = {
-  openai: openaiProvider,
   dashscope: dashscopeProvider,
   seedream: seedreamProvider,
   replicate: replicateProvider,
@@ -19,7 +17,7 @@ export const PROVIDER_IDS = Object.keys(PROVIDERS) as ProviderId[];
 
 /** Resolve a provider id (explicit or env default), checking it is configured. */
 export function getProvider(id?: string): ImageProvider {
-  const selected = (id ?? process.env.IMAGE_PROVIDER ?? 'openai') as ProviderId;
+  const selected = (id ?? process.env.IMAGE_PROVIDER ?? 'replicate') as ProviderId;
   const p = PROVIDERS[selected];
   if (!p) {
     throw new ApiError('BAD_REQUEST', `Unknown provider: ${selected}`, selected);

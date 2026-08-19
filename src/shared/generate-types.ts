@@ -2,7 +2,6 @@
 // Imported by the browser bundle (tsconfig.app) and by api/*.ts.
 
 export const PROVIDER_IDS = [
-  'openai',
   'dashscope',
   'seedream',
   'replicate',

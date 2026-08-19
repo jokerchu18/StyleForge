@@ -129,6 +129,69 @@ export async function getHealth(): Promise<HealthResponse> {
   return (await res.json()) as HealthResponse;
 }
 
+// ── Async generation (POST /api/generate → poll) ────────────────────
+
+export interface GenerateStarted {
+  status: 'pending' | 'succeeded' | 'failed';
+  generationId: string;
+  predictionId: string;
+  imageUrl?: string | null;
+  newBalance?: number;
+}
+
+export interface GenerationStatus {
+  status: 'pending' | 'processing' | 'succeeded' | 'failed';
+  generationId: string;
+  imageUrl?: string | null;
+  costUnits?: number;
+}
+
+/**
+ * Kick off an async image-to-image generation. Returns immediately with a
+ * generationId to poll; the image is fetched via pollGeneration when ready.
+ */
+export async function startGeneration(
+  req: StyleTransformRequest,
+  imageBlob: Blob,
+): Promise<GenerateStarted> {
+  const params = new URLSearchParams({ styleId: req.styleId });
+  if (req.provider) params.set('provider', req.provider);
+  if (req.quality) params.set('quality', req.quality);
+
+  const token = await getAccessToken();
+  const res = await fetch(`/api/generate?${params.toString()}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': imageBlob.type || 'application/octet-stream',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: imageBlob,
+  });
+
+  if (!res.ok) throw await parseErrorResponse(res);
+  return (await res.json()) as GenerateStarted;
+}
+
+/** Poll an in-flight generation until it succeeds/fails. */
+export async function pollGeneration(generationId: string): Promise<GenerationStatus> {
+  const token = await getAccessToken();
+  const res = await fetch(`/api/generate?id=${encodeURIComponent(generationId)}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  if (!res.ok) throw await parseErrorResponse(res);
+  return (await res.json()) as GenerationStatus;
+}
+
+/** Fetch image bytes from a signed (or absolute) URL and return a Blob. */
+export async function fetchResultImage(url: string): Promise<Blob> {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new GenerateClientError('UPSTREAM_ERROR', `Image fetch failed (${res.status})`);
+  }
+  return res.blob();
+}
+
 function numOrUndefined(v: string): number | undefined {
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;

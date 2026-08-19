@@ -2,141 +2,151 @@
 // Async prediction model: create prediction -> poll until succeeded -> download
 // the output image (never leak the output URL to the client).
 //
-// Replicate is a model platform, so the model and its input schema are
-// configurable: per-style overrides (providerOverrides.replicate) take
-// precedence over the REPLICATE_MODEL / REPLICATE_MODEL_VERSION env vars.
+// Model selection and per-model input schemas live in api/providers/models.ts;
+// this module only owns the Replicate transport (create/poll/download) and the
+// generic `replicate` provider that dispatches to whichever model the style
+// resolves to (default FLUX Kontext Pro).
 import type {
   GenerateImageResult,
   ImageProvider,
   TransformImageOptions,
 } from '../_shared/provider.js';
-import type { ReplicateStyleOverrides } from '../../src/shared/style-types.js';
 import { ApiError } from '../_shared/errors.js';
 import { generateTimeoutMs } from '../_shared/provider.js';
+import { resolveModelDef, resolveModelVersion } from './models.js';
 
 const REPLICATE_BASE = 'https://api.replicate.com/v1';
 const POLL_INTERVAL_MS = 1500;
 
-interface PredictionResponse {
+export type PredictionStatus =
+  | 'starting'
+  | 'processing'
+  | 'succeeded'
+  | 'failed'
+  | 'canceled';
+
+export interface PredictionResponse {
   id?: string;
-  status?: 'starting' | 'processing' | 'succeeded' | 'failed' | 'canceled';
+  status?: PredictionStatus;
   output?: unknown;
   error?: string;
 }
 
-export const replicateProvider: ImageProvider = {
-  id: 'replicate',
-  label: 'Replicate',
-  isConfigured: () => Boolean(process.env.REPLICATE_API_TOKEN),
+export interface PredictionHandle {
+  id: string;
+  status: PredictionStatus;
+  output?: unknown;
+  error?: string;
+}
 
-  async transform(opts: TransformImageOptions): Promise<GenerateImageResult> {
-    const token = process.env.REPLICATE_API_TOKEN;
-    const overrides = opts.style.providerOverrides?.replicate as
-      | ReplicateStyleOverrides
-      | undefined;
-    const model = overrides?.model ?? process.env.REPLICATE_MODEL;
-    const version = overrides?.version ?? process.env.REPLICATE_MODEL_VERSION;
+export function replicateToken(): string {
+  const token = process.env.REPLICATE_API_TOKEN;
+  if (!token) {
+    throw new ApiError(
+      'PROVIDER_NOT_CONFIGURED',
+      'Replicate is not configured (REPLICATE_API_TOKEN)',
+      'replicate',
+    );
+  }
+  return token;
+}
 
-    // Replicate's prediction API now requires an exact `version` hash and
-    // rejects the legacy `model` field. Resolve it from an explicit version,
-    // or extract it from an "owner/name:version" model string.
-    let resolvedVersion = version ?? '';
-    if (!resolvedVersion && model) {
-      const idx = model.lastIndexOf(':');
-      if (idx >= 0) resolvedVersion = model.slice(idx + 1);
-    }
-    if (!resolvedVersion) {
-      throw new ApiError(
-        'UPSTREAM_ERROR',
-        'Replicate version is required — set REPLICATE_MODEL_VERSION or REPLICATE_MODEL="owner/name:version"',
-        'replicate',
-      );
-    }
+/**
+ * Create a Replicate prediction from an explicit input + version (optionally
+ * wiring a webhook) and return its handle. Does NOT poll — use
+ * getPredictionResult to check status later.
+ */
+export async function createPredictionRaw(
+  input: Record<string, unknown>,
+  version: string,
+  webhookUrl?: string,
+): Promise<PredictionHandle> {
+  const token = replicateToken();
 
-    const imageKey =
-      overrides?.imageKey ?? process.env.REPLICATE_IMAGE_KEY ?? 'image';
-    const promptKey =
-      overrides?.promptKey ?? process.env.REPLICATE_PROMPT_KEY ?? 'prompt';
-    const dataUri = `data:${opts.mime};base64,${Buffer.from(opts.imageBytes).toString('base64')}`;
+  const body: Record<string, unknown> = { input, version };
+  if (webhookUrl) {
+    body.webhook = webhookUrl;
+    body.webhook_events_filter = ['completed'];
+  }
 
-    const input: Record<string, unknown> = {
-      ...(overrides?.input ?? {}),
-      [imageKey]: dataUri,
-    };
-    if (opts.style.prompt) input[promptKey] = opts.style.prompt;
-    if (overrides?.seed != null) input.seed = overrides.seed;
+  const res = await fetch(`${REPLICATE_BASE}/predictions`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(30_000),
+  });
 
-    const body: Record<string, unknown> = { input, version: resolvedVersion };
+  if (!res.ok) {
+    throw new ApiError(
+      'UPSTREAM_ERROR',
+      `Replicate create failed (${res.status}): ${await safeText(res)}`,
+      'replicate',
+    );
+  }
 
-    const deadline = Date.now() + generateTimeoutMs();
+  const prediction = (await res.json()) as PredictionResponse;
+  const id = prediction.id;
+  if (!id) {
+    throw new ApiError('UPSTREAM_ERROR', 'Replicate create missing prediction id', 'replicate');
+  }
+  return {
+    id,
+    status: prediction.status ?? 'starting',
+    output: prediction.output,
+    error: prediction.error,
+  };
+}
 
-    // 1. Create prediction.
-    const createRes = await fetch(`${REPLICATE_BASE}/predictions`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(30_000),
-    });
+/**
+ * Create a prediction for a style, resolving its model + input via the model
+ * registry. Convenience wrapper over createPredictionRaw.
+ */
+export async function createPrediction(
+  opts: TransformImageOptions,
+  webhookUrl?: string,
+): Promise<PredictionHandle> {
+  const def = resolveModelDef(opts.style);
+  const input = def.buildInput({
+    imageBytes: opts.imageBytes,
+    mime: opts.mime,
+    prompt: opts.style.prompt ?? '',
+    seed: opts.style.providerOverrides?.replicate?.seed,
+    extra: opts.style.providerOverrides?.replicate?.input,
+  });
+  return createPredictionRaw(input, resolveModelVersion(def), webhookUrl);
+}
 
-    if (!createRes.ok) {
-      throw new ApiError(
-        'UPSTREAM_ERROR',
-        `Replicate create failed (${createRes.status}): ${await safeText(createRes)}`,
-        'replicate',
-      );
-    }
+/** Fetch the current state of a prediction (single poll). */
+export async function getPredictionResult(id: string): Promise<PredictionHandle> {
+  const token = replicateToken();
+  const res = await fetch(`${REPLICATE_BASE}/predictions/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) {
+    throw new ApiError(
+      'UPSTREAM_ERROR',
+      `Replicate poll failed (${res.status})`,
+      'replicate',
+    );
+  }
+  const p = (await res.json()) as PredictionResponse;
+  return {
+    id: p.id ?? id,
+    status: p.status ?? 'processing',
+    output: p.output,
+    error: p.error,
+  };
+}
 
-    const prediction = (await createRes.json()) as PredictionResponse;
-    if (prediction.status === 'succeeded') {
-      return downloadOutput(prediction.output, model ?? resolvedVersion);
-    }
-    if (prediction.status === 'failed') {
-      throw new ApiError(
-        'UPSTREAM_ERROR',
-        `Replicate prediction failed: ${prediction.error ?? ''}`,
-        'replicate',
-      );
-    }
-    const id = prediction.id;
-    if (!id) {
-      throw new ApiError('UPSTREAM_ERROR', 'Replicate create missing prediction id', 'replicate');
-    }
-
-    // 2. Poll until succeeded/failed.
-    while (Date.now() < deadline) {
-      await sleep(POLL_INTERVAL_MS);
-      const pollRes = await fetch(`${REPLICATE_BASE}/predictions/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (!pollRes.ok) {
-        throw new ApiError(
-          'UPSTREAM_ERROR',
-          `Replicate poll failed (${pollRes.status})`,
-          'replicate',
-        );
-      }
-      const p = (await pollRes.json()) as PredictionResponse;
-      if (p.status === 'succeeded') {
-        return downloadOutput(p.output, model ?? resolvedVersion);
-      }
-      if (p.status === 'failed' || p.status === 'canceled') {
-        throw new ApiError(
-          'UPSTREAM_ERROR',
-          `Replicate prediction ${p.status}: ${p.error ?? ''}`,
-          'replicate',
-        );
-      }
-    }
-
-    throw new ApiError('UPSTREAM_TIMEOUT', 'Replicate prediction timed out', 'replicate');
-  },
-};
-
-async function downloadOutput(output: unknown, model: string): Promise<GenerateImageResult> {
+/** Download a prediction output into image bytes. */
+export async function downloadOutput(
+  output: unknown,
+  model: string,
+): Promise<GenerateImageResult> {
   const url = extractUrl(output);
   if (!url) {
     throw new ApiError('UPSTREAM_ERROR', 'Replicate succeeded without image output', 'replicate');
@@ -159,6 +169,47 @@ async function downloadOutput(output: unknown, model: string): Promise<GenerateI
   const mime = imgRes.headers.get('content-type')?.split(';')[0] ?? 'image/png';
   return { bytes, mime, model };
 }
+
+export const replicateProvider: ImageProvider = {
+  id: 'replicate',
+  label: 'Replicate',
+  isConfigured: () => Boolean(process.env.REPLICATE_API_TOKEN),
+
+  async transform(opts: TransformImageOptions): Promise<GenerateImageResult> {
+    const def = resolveModelDef(opts.style);
+    const model = def.model;
+
+    const prediction = await createPrediction(opts);
+    if (prediction.status === 'succeeded') {
+      return downloadOutput(prediction.output, model);
+    }
+    if (prediction.status === 'failed' || prediction.status === 'canceled') {
+      throw new ApiError(
+        'UPSTREAM_ERROR',
+        `Replicate prediction ${prediction.status}: ${prediction.error ?? ''}`,
+        'replicate',
+      );
+    }
+
+    const deadline = Date.now() + generateTimeoutMs();
+    while (Date.now() < deadline) {
+      await sleep(POLL_INTERVAL_MS);
+      const p = await getPredictionResult(prediction.id);
+      if (p.status === 'succeeded') {
+        return downloadOutput(p.output, model);
+      }
+      if (p.status === 'failed' || p.status === 'canceled') {
+        throw new ApiError(
+          'UPSTREAM_ERROR',
+          `Replicate prediction ${p.status}: ${p.error ?? ''}`,
+          'replicate',
+        );
+      }
+    }
+
+    throw new ApiError('UPSTREAM_TIMEOUT', 'Replicate prediction timed out', 'replicate');
+  },
+};
 
 /** Replicate output is a URL string, an array, or { url }. */
 function extractUrl(output: unknown): string | undefined {

@@ -14,28 +14,28 @@ interface Post {
 const POSTS: Post[] = [
   {
     slug: 'photo-to-anime-guide',
-    title: 'How to Turn Your Photo into Anime: A Beginner’s Guide',
+    title: 'How to Turn Your Photo into an Anime Character',
     excerpt:
       'Pick a style, upload, and get anime art in seconds. Learn which cloud AI styles suit portraits, landscapes and more.',
-    image: '/styles/api/anime.png',
+    image: '/styles/api/paparazzi.png',
     category: 'Guide',
     date: 'Aug 12, 2026',
   },
   {
     slug: 'sci-fi-photo-edits',
-    title: 'Create Sci-Fi Photos: Neon, Cyberpunk and Futuristic Looks',
+    title: 'Create Cyberpunk Photos: Neon, Futuristic Looks',
     excerpt:
-      'Give your photos a futuristic glow with our sci-fi style — perfect for avatars, posters and creative projects.',
-    image: '/styles/api/sci-fi.png',
+      'Give your photos a futuristic glow with our cyberpunk city style — perfect for avatars, posters and creative projects.',
+    image: '/styles/api/isometric-map.png',
     category: 'Inspiration',
     date: 'Aug 5, 2026',
   },
   {
-    slug: 'watercolor-vs-oil',
-    title: 'Watercolor vs Oil Painting: Which Style Suits Your Photo?',
+    slug: 'cinematic-editorial-guide',
+    title: 'Cinematic Editorial vs Street Style: Which Fits Your Photo?',
     excerpt:
-      'Both turn photos into painterly art, but they feel very different. A quick comparison to help you choose.',
-    image: '/styles/api/oil-painting.png',
+      'Both turn photos into high-fashion looks, but they feel very different. A quick comparison to help you choose.',
+    image: '/styles/api/magazine-editorial.png',
     category: 'Comparison',
     date: 'Jul 28, 2026',
   },
@@ -50,7 +50,6 @@ export default function BlogPage() {
     <AppLayout>
       <div className="landing-app-main">
         <div className="blog-head">
-          <span className="landing-eyebrow">StyleForge Journal</span>
           <h1 className="hero-h1">{en.blog.title}</h1>
           <p className="hero-sub">{en.blog.subtitle}</p>
         </div>

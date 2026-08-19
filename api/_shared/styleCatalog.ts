@@ -10,6 +10,8 @@ import type {
 } from '../../src/shared/style-types.js';
 import { supabaseAdmin } from './supabase.js';
 import { ApiError } from './errors.js';
+import { computeGenerationCost } from './pricing.js';
+import { modelCreditCost } from '../providers/models.js';
 
 export interface StyleCatalog {
   list(): Promise<StyleDefinition[]>;
@@ -37,7 +39,7 @@ interface StyleRow {
 }
 
 function toStyleDefinition(row: StyleRow): StyleDefinition {
-  return {
+  const style: StyleDefinition = {
     id: row.slug,
     engine: 'cloud',
     category: row.category,
@@ -46,8 +48,8 @@ function toStyleDefinition(row: StyleRow): StyleDefinition {
     status: row.status as StyleStatus,
     label: row.label,
     description: row.description,
-    sampleImage: row.preview_image,
-    examples: row.examples ?? [],
+    sampleImage: publicImageUrl(row.preview_image),
+    examples: (row.examples ?? []).map(publicImageUrl),
     tags: row.tags ?? [],
     order: row.order ?? 0,
     author: row.creator ?? undefined,
@@ -58,6 +60,40 @@ function toStyleDefinition(row: StyleRow): StyleDefinition {
     prompt: row.prompt,
     providerOverrides: row.generation_config as StyleDefinition['providerOverrides'],
   };
+
+  // Credit cost for one generation. Prefer the model's registered cost (e.g.
+  // gpt-image = 3, flux/nano-banana = 2); fall back to the provider tier.
+  try {
+    const modelId = style.providerOverrides?.replicate?.model;
+    style.costUnits = modelCreditCost(modelId);
+  } catch {
+    try {
+      const provider = style.providerOverrides?.replicate
+        ? 'replicate'
+        : style.providerOverrides?.dashscope
+          ? 'dashscope'
+          : 'replicate';
+      style.costUnits = computeGenerationCost({ provider }).units;
+    } catch {
+      style.costUnits = 2;
+    }
+  }
+
+  return style;
+}
+
+/**
+ * Resolve a stored preview image reference into a URL the browser can load:
+ * - a full URL (https://…) passes through untouched
+ * - a legacy static path (/styles/api/…) passes through untouched
+ * - a storage object path (styles/foo.png) becomes a public-bucket URL
+ */
+function publicImageUrl(path: string): string {
+  if (!path) return path;
+  if (/^https?:\/\//.test(path) || path.startsWith('/')) return path;
+  const base = process.env.SUPABASE_URL;
+  if (!base) return path;
+  return `${base.replace(/\/$/, '')}/storage/v1/object/public/${path}`;
 }
 
 function requireAdmin() {

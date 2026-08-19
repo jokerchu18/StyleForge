@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import StyleCard from '../components/StyleCard';
@@ -22,6 +22,10 @@ export default function ExplorePage() {
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
   const [category, setCategory] = useState(searchParams.get('category') ?? 'all');
   const [sort, setSort] = useState<SortKey>('popular');
+
+  useEffect(() => {
+    document.title = 'All Styles — AI Photo Styles | StyleForge';
+  }, []);
 
   const catalog = useStyles();
   const categories = catalog?.categories ?? [];
@@ -63,16 +67,15 @@ export default function ExplorePage() {
     <AppLayout>
       <div className="landing-app-main">
         <div className="explore-head">
-          <span className="landing-eyebrow">Style Gallery</span>
-          <h1 className="hero-h1">Explore Styles</h1>
-          <p className="hero-sub">Discover styles for your next creation.</p>
+          <h1 className="hero-h1">All Styles</h1>
+          <p className="hero-sub">Browse AI photo styles and discover your next look.</p>
 
           <div className="explore-controls">
             <div className="explore-row">
               <SearchBar
                 value={query}
                 onChange={setQuery}
-                placeholder="Search styles, prompts, or inspiration…"
+                placeholder="Search styles, categories, or tags…"
               />
               <SortDropdown
                 value={sort}
@@ -93,15 +96,17 @@ export default function ExplorePage() {
             <p className="explore-count" aria-live="polite">
               {sorted.length} style{sorted.length === 1 ? '' : 's'}
             </p>
-            <StyleGrid>
-              {sorted.map((s) => (
-                <StyleCard
-                  key={s.id}
-                  style={s}
-                  onUse={(id) => navigate(`/styles/${id}`)}
-                />
-              ))}
-            </StyleGrid>
+            <div className="style-gallery-wrapper">
+              <StyleGrid>
+                {sorted.map((s) => (
+                  <StyleCard
+                    key={s.id}
+                    style={s}
+                    onUse={(id) => navigate(`/styles/${id}`)}
+                  />
+                ))}
+              </StyleGrid>
+            </div>
           </>
         ) : (
           <div className="empty-state">

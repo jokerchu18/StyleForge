@@ -12,6 +12,7 @@ interface CreationItem {
   generationType: string;
   costUnits: number;
   imageUrl: string | null;
+  thumbnailUrl: string | null;
   status: string;
   createdAt: string;
 }
@@ -24,51 +25,68 @@ function formatDate(ts: string): string {
   }
 }
 
+/** Session cache so navigating back to My Creations doesn't re-fetch. */
+const creationsCache = new Map<string, CreationItem[]>();
+
 export default function CreationsPage() {
   const { user } = useAuth();
   const [creations, setCreations] = useState<CreationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const load = useCallback(async () => {
-    if (!user) {
-      setCreations([]);
-      setLoading(false);
-      return;
-    }
-    try {
-      const data = await apiJson<{ items: CreationItem[] }>('/api/generations');
-      setCreations(data.items);
-    } catch {
-      setCreations([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+  const load = useCallback(
+    async (silent = false) => {
+      if (!user) {
+        setCreations([]);
+        setLoading(false);
+        return;
+      }
+      if (!silent) setLoading(true);
+      try {
+        const data = await apiJson<{ items: CreationItem[] }>('/api/generations');
+        creationsCache.set(user.id, data.items);
+        setCreations(data.items);
+      } catch {
+        setCreations([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user],
+  );
 
   useEffect(() => {
     document.title = 'My Creations | StyleForge';
-    setLoading(true);
-    load();
-  }, [load]);
+    if (user && creationsCache.has(user.id)) {
+      setCreations(creationsCache.get(user.id) as CreationItem[]);
+      setLoading(false);
+      load(true); // warm in background
+    } else {
+      setLoading(true);
+      load();
+    }
+  }, [load, user]);
 
   const remove = useCallback(
     async (id: string) => {
       try {
         await apiJson(`/api/generations?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-        setCreations((c) => c.filter((x) => x.id !== id));
+        setCreations((c) => {
+          const next = c.filter((x) => x.id !== id);
+          if (user) creationsCache.set(user.id, next);
+          return next;
+        });
       } catch {
         /* ignore */
       }
     },
-    [],
+    [user],
   );
 
   return (
     <AppLayout>
       <div className="landing-app-main">
         <div className="creations-head">
-          <span className="landing-eyebrow">Your work</span>
           <h1 className="hero-h1">My Creations</h1>
           <p className="hero-sub">Every image you’ve transformed.</p>
         </div>
@@ -99,8 +117,8 @@ export default function CreationsPage() {
               {creations.map((c) => (
                 <article key={c.id} className="creation-card">
                   <div className="creation-media">
-                    {c.imageUrl ? (
-                      <img src={c.imageUrl} alt={`${c.styleLabel} creation`} loading="lazy" />
+                    {(c.thumbnailUrl || c.imageUrl) ? (
+                      <img src={c.thumbnailUrl ?? c.imageUrl ?? ''} alt={`${c.styleLabel} creation`} loading="lazy" />
                     ) : (
                       <div className="creation-failed">Failed</div>
                     )}
@@ -113,11 +131,11 @@ export default function CreationsPage() {
                       </time>
                     </div>
                     <div className="creation-meta">
-                      <span>{c.costUnits} Generation{c.costUnits > 1 ? 's' : ''}</span>
+                      <span>{c.costUnits} Credit{c.costUnits > 1 ? 's' : ''}</span>
                       <span>{c.generationType}</span>
                     </div>
                     <div className="creation-actions">
-                      {c.imageUrl && (
+                      {c.imageUrl != null && (
                         <a
                           href={c.imageUrl}
                           download={`styleforge-${c.styleId}.png`}
@@ -129,7 +147,7 @@ export default function CreationsPage() {
                       <button
                         type="button"
                         className="btn-ghost"
-                        onClick={() => navigate(`/tool?style=${encodeURIComponent(c.styleId)}`)}
+                        onClick={() => navigate(`/image-to-image?style=${encodeURIComponent(c.styleId)}`)}
                       >
                         Try again
                       </button>
@@ -154,7 +172,7 @@ export default function CreationsPage() {
             <button
               type="button"
               className="btn-primary"
-              onClick={() => navigate('/tool')}
+              onClick={() => navigate('/image-to-image')}
             >
               Transform a photo
             </button>

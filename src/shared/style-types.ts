@@ -25,21 +25,18 @@ export type MockFilter = 'sepia' | 'grayscale' | 'saturate' | 'tint';
  * and how to map the image/prompt into that model's input.
  */
 export interface ReplicateStyleOverrides {
-  /** Model identifier, e.g. "owner/name" or "owner/name:version". */
+  /**
+   * Model registry id (see api/providers/models.ts), e.g. 'flux-kontext-pro',
+   * 'nano-banana-2' or 'gpt-image'. Omitted = the default FLUX model.
+   */
   model?: string;
-  /** Exact version hash (takes precedence over model). */
-  version?: string;
-  /** Input key for the image (default "image"). */
-  imageKey?: string;
-  /** Input key for the prompt (default "prompt"). */
-  promptKey?: string;
   /**
    * Optional fixed seed for reproducible output. When set, it is merged into
    * the model's input (as `input.seed`), so the model must support a seed
    * parameter — otherwise it is ignored. Omitted = random seed.
    */
   seed?: number;
-  /** Extra input params merged into the prediction input. */
+  /** Extra input params merged into the model's prediction input. */
   input?: Record<string, unknown>;
 }
 
@@ -82,6 +79,8 @@ export interface StyleDefinition {
   usageCount?: number;
   /** Live like counter (server-maintained). */
   likeCount?: number;
+  /** Credit cost for one generation with this style (server-computed). */
+  costUnits?: number;
   /** Recommended model id ('auto' = provider decides). Server-side hint. */
   model?: string;
   /**

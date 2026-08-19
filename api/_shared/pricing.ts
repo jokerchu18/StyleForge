@@ -14,12 +14,12 @@ export interface Plan {
 }
 
 export const PLANS: Plan[] = [
-  { id: 'free', price: 0, generations: 10, label: 'Free', mostPopular: false },
-  { id: 'plus', price: 9.99, generations: 200, label: 'Plus', mostPopular: true },
-  { id: 'pro', price: 24.99, generations: 600, label: 'Pro', mostPopular: false },
+  { id: 'free', price: 0, generations: 40, label: 'Free', mostPopular: false },
+  { id: 'plus', price: 9.99, generations: 2000, label: 'Plus', mostPopular: true },
+  { id: 'pro', price: 24.99, generations: 6000, label: 'Pro', mostPopular: false },
 ];
 
-export const FREE_MONTHLY_GENERATIONS = 10;
+export const FREE_MONTHLY_GENERATIONS = 40;
 
 export function planById(id: string): Plan | undefined {
   return PLANS.find((p) => p.id === id);
@@ -43,7 +43,7 @@ export function computeGenerationCost(opts: {
   if (opts.quality === 'high' || (opts.resolution ?? 0) > 1024) {
     tier = tier === 'standard' ? 'premium' : 'ultra';
   }
-  const units = tier === 'standard' ? 1 : tier === 'premium' ? 2 : 3;
+  const units = tier === 'standard' ? 10 : tier === 'premium' ? 20 : 30;
   return { units, tier };
 }
 

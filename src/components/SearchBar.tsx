@@ -23,7 +23,7 @@ export default function SearchBar({ value, onChange, placeholder }: Props) {
         type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder ?? 'Search styles, prompts, categories...'}
+        placeholder={placeholder ?? 'Search styles, categories, or tags...'}
         aria-label="Search styles"
       />
     </label>

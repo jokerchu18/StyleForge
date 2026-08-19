@@ -3,7 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { sendJson, methodNotAllowed } from './_shared/http.js';
 import { getUserId } from './_shared/auth.js';
 import { supabaseAdmin } from './_shared/supabase.js';
-import { signedImageUrl } from './_shared/billing.js';
+import { signedImageUrls } from './_shared/billing.js';
 import { ApiError, sendError } from './_shared/errors.js';
 
 function parseQuery(url: string | undefined): Record<string, string> {
@@ -24,7 +24,7 @@ export default async function handler(
     if (method === 'GET') {
       const { data, error } = await supabaseAdmin
         .from('generations')
-        .select('*')
+        .select('id,style_id,model,generation_type,cost_units,output_image,thumbnail_image,status,created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(60);
@@ -43,28 +43,36 @@ export default async function handler(
         }
       }
 
-      const items = await Promise.all(
-        (data as {
-          id: string;
-          style_id: string;
-          model: string;
-          generation_type: string;
-          cost_units: number;
-          output_image: string | null;
-          status: string;
-          created_at: string;
-        }[]).map(async (g) => ({
-          id: g.id,
-          styleId: g.style_id,
-          styleLabel: labels.get(g.style_id) ?? g.style_id,
-          model: g.model,
-          generationType: g.generation_type,
-          costUnits: g.cost_units,
-          imageUrl: g.output_image ? await signedImageUrl(g.output_image) : null,
-          status: g.status,
-          createdAt: g.created_at,
-        })),
-      );
+      const rows = data as {
+        id: string;
+        style_id: string;
+        model: string;
+        generation_type: string;
+        cost_units: number;
+        output_image: string | null;
+        thumbnail_image: string | null;
+        status: string;
+        created_at: string;
+      }[];
+
+      // One batch storage call for both output images and thumbnails.
+      const imagePaths = rows
+        .flatMap((g) => [g.output_image, g.thumbnail_image])
+        .filter((p): p is string => Boolean(p));
+      const urlMap = await signedImageUrls(imagePaths);
+
+      const items = rows.map((g) => ({
+        id: g.id,
+        styleId: g.style_id,
+        styleLabel: labels.get(g.style_id) ?? g.style_id,
+        model: g.model,
+        generationType: g.generation_type,
+        costUnits: g.cost_units,
+        imageUrl: g.output_image ? (urlMap.get(g.output_image) ?? null) : null,
+        thumbnailUrl: g.thumbnail_image ? (urlMap.get(g.thumbnail_image) ?? null) : null,
+        status: g.status,
+        createdAt: g.created_at,
+      }));
 
       sendJson(res, 200, { items });
       return;

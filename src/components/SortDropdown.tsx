@@ -1,3 +1,11 @@
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
+
 interface Option {
   value: string;
   label: string;
@@ -9,22 +17,20 @@ interface Props {
   options: Option[];
 }
 
-/** Compact sort select for the gallery filter bar. */
+/** Sort select for the gallery filter bar (Radix Select, matching other forms). */
 export default function SortDropdown({ value, onChange, options }: Props) {
   return (
-    <label className="sort-dropdown">
-      <span className="sort-dropdown-label">Sort</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        aria-label="Sort styles"
-      >
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="sort-dropdown" aria-label="Sort styles">
+        <SelectValue placeholder="Sort" />
+      </SelectTrigger>
+      <SelectContent>
         {options.map((o) => (
-          <option key={o.value} value={o.value}>
+          <SelectItem key={o.value} value={o.value}>
             {o.label}
-          </option>
+          </SelectItem>
         ))}
-      </select>
-    </label>
+      </SelectContent>
+    </Select>
   );
 }

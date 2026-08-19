@@ -9,6 +9,7 @@ import CreationsPage from './pages/CreationsPage';
 import PricingPage from './pages/PricingPage';
 import AccountPage from './pages/AccountPage';
 import SeoPage from './pages/SeoPage';
+import { AccountProvider } from './hooks/useAccount';
 
 const SEO_SLUGS = [
   'photo-to-anime',
@@ -20,22 +21,28 @@ const SEO_SLUGS = [
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <AccountProvider>
+        <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/tool" element={<ToolPage />} />
-        <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/image-to-image" element={<ToolPage />} />
+        <Route path="/all-styles" element={<ExplorePage />} />
         <Route path="/styles/:id" element={<StyleDetailPage />} />
-        <Route path="/create" element={<CreateStylePage />} />
+        <Route path="/create-style" element={<CreateStylePage />} />
         <Route path="/creations" element={<CreationsPage />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/account" element={<AccountPage />} />
         <Route path="/blog" element={<BlogPage />} />
+        {/* Legacy aliases */}
+        <Route path="/tool" element={<Navigate to="/image-to-image" replace />} />
+        <Route path="/explore" element={<Navigate to="/all-styles" replace />} />
+        <Route path="/create" element={<Navigate to="/create-style" replace />} />
         <Route path="/home" element={<Navigate to="/" replace />} />
         {SEO_SLUGS.map((slug) => (
           <Route key={slug} path={`/${slug}`} element={<SeoPage slug={slug} />} />
         ))}
         <Route path="*" element={<HomePage />} />
-      </Routes>
+        </Routes>
+      </AccountProvider>
     </BrowserRouter>
   );
 }

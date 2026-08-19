@@ -7,15 +7,6 @@ import { apiJson } from '../lib/api';
 import { resolveStyleMeta } from '../shared/styles';
 import { useStyles } from '../hooks/useStyles';
 import { useAccount } from '../hooks/useAccount';
-import type { PublicStyleDefinition } from '../shared/style-types';
-
-function modelLabel(style: PublicStyleDefinition): string {
-  const rep = style.providerOverrides?.replicate?.model;
-  if (rep) return rep;
-  const dash = style.providerOverrides?.dashscope?.dashscopeFunction;
-  if (dash) return `dashscope:${dash}`;
-  return 'AI Model';
-}
 
 export default function StyleDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -105,30 +96,24 @@ export default function StyleDetailPage() {
               <p className="detail-desc">{description}</p>
               <dl className="detail-meta">
                 <div>
-                  <dt>Model</dt>
-                  <dd>{modelLabel(style)}</dd>
-                </div>
-                <div>
                   <dt>Category</dt>
                   <dd>{style.category}</dd>
                 </div>
-                <div>
-                  <dt>Uses</dt>
-                  <dd>{style.usageCount ?? 0}</dd>
-                </div>
-                <div>
-                  <dt>Likes</dt>
-                  <dd>{style.likeCount ?? 0}</dd>
-                </div>
+                {style.costUnits != null && (
+                  <div>
+                    <dt>Credits</dt>
+                    <dd>{style.costUnits}</dd>
+                  </div>
+                )}
               </dl>
               <div className="detail-actions">
                 <button
                   type="button"
                   className="btn-primary btn-lg"
-                  onClick={() => navigate(`/tool?style=${encodeURIComponent(style.id)}`)}
+                  onClick={() => navigate(`/image-to-image?style=${encodeURIComponent(style.id)}`)}
                   disabled={isPremiumLocked}
                 >
-                  {isPremiumLocked ? 'Upgrade to use' : 'Use this Style'}
+                  {isPremiumLocked ? 'Upgrade to use' : 'Generate'}
                 </button>
                 <button
                   type="button"

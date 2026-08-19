@@ -5,8 +5,8 @@ import type { StyleCategory } from './style-types.js';
 
 /** Category display order (also used as the canonical category list). */
 export const CATEGORY_PRESETS: StyleCategory[] = [
-  'anime',
-  'painting',
-  'sketch',
-  'photo',
+  'Trending',
+  'Character',
+  'Worlds',
+  'Creative',
 ];

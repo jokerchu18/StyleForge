@@ -88,7 +88,7 @@ export default function CreateStylePage() {
         sampleImage,
       });
       setSuccess(true);
-      setTimeout(() => navigate('/explore'), 1500);
+      setTimeout(() => navigate('/all-styles'), 1500);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save style');
     } finally {
@@ -102,7 +102,6 @@ export default function CreateStylePage() {
     <AppLayout>
       <div className="landing-app-main">
         <div className="create-head">
-          <span className="landing-eyebrow">Community</span>
           <h1 className="hero-h1">{en.create.title}</h1>
           <p className="hero-sub">{en.create.subtitle}</p>
         </div>

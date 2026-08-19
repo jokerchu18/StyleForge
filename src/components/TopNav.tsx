@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 
 const CATS = [
-  { label: 'All Styles',     to: '/explore' },
-  { label: 'Anime',          to: '/explore?category=anime' },
-  { label: 'Oil Painting',   to: '/explore?category=painting' },
-  { label: 'Pencil Sketch',  to: '/explore?category=sketch' },
-  { label: 'Realistic Photo', to: '/explore?category=photo' },
+  { label: 'All Styles',     to: '/all-styles' },
+  { label: 'Trending',       to: '/all-styles?category=Trending' },
+  { label: 'Character',      to: '/all-styles?category=Character' },
+  { label: 'Worlds',         to: '/all-styles?category=Worlds' },
+  { label: 'Creative',       to: '/all-styles?category=Creative' },
 ] as const;
 
 /** Horizontal category-discovery strip (PromptHero-style browsing). */

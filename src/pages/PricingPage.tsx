@@ -4,17 +4,17 @@ import { usePricing } from '../hooks/usePricing';
 import { useAccount } from '../hooks/useAccount';
 
 const PLAN_FEATURES: Record<string, string[]> = {
-  free: ['10 Generations / month', 'Standard generation', 'Explore styles', 'Save styles'],
+  free: ['40 Credits / month', 'Standard generation', 'Explore styles', 'Save styles'],
   plus: [
-    '200 Generations / month',
+    '2000 Credits / month',
     'All styles + Premium styles',
     'HD generation',
     'No watermark',
     'Commercial use',
-    'Generation history',
+    'Credit history',
   ],
   pro: [
-    '600 Generations / month',
+    '6000 Credits / month',
     'All styles + Premium models',
     'HD / High resolution',
     'Priority queue',
@@ -35,11 +35,10 @@ export default function PricingPage() {
     <AppLayout>
       <div className="pricing">
         <div className="pricing-head">
-          <span className="landing-eyebrow">Simple pricing</span>
-          <h1>Generations, not styles.</h1>
+          <h1>Credits, not subscriptions per style.</h1>
           <p className="hero-sub">
-            Every style costs the same — you pay for image generations, nothing
-            else.
+            Every generation spends credits — you pay for image generations,
+            nothing else.
           </p>
         </div>
 
@@ -61,7 +60,7 @@ export default function PricingPage() {
                   {!isFree && <small>/ month</small>}
                 </div>
                 <div className="pricing-generations">
-                  {plan.generations} Generations
+                  {plan.generations} Credits
                 </div>
                 <ul className="pricing-features">
                   {(PLAN_FEATURES[plan.id] ?? []).map((f) => (

@@ -22,21 +22,21 @@ export const en = {
     'Cloud AI reimagines your image with a wide range of styles — no setup, no account.',
   landingStylesTitle: 'A style for every mood',
   landingStylesSubtitle:
-    'From anime looks to sci-fi, oil painting, watercolor and more.',
+    'From cinematic editorials and cyberpunk cityscapes to anime characters, dreamscapes and more.',
   landingCta: 'Start converting',
 
   blog: {
     title: 'Style Guides & Updates',
-    subtitle: 'Tips for turning your photos into sci-fi, anime, oil painting and more.',
+    subtitle: 'Tips for turning your photos into cinematic editorials, anime characters, dreamscapes and more.',
     empty: 'Guides are coming soon.',
   },
 
   homeHeroTitle: 'Turn any photo into',
   homeHeroAccent: 'a whole new style.',
   homeHeroSubtitle:
-    'A free AI photo stylizer that reimagines your images in seconds — turn everyday photos into sci-fi scenes, anime art, oil paintings, sketches, watercolor and more. Pick a style, hit go, and download the result.',
+    'A free AI photo stylizer that reimagines your images in seconds — turn everyday photos into cinematic editorials, cyberpunk cityscapes, anime characters, dreamscapes, miniature worlds and more. Pick a style, hit go, and download the result.',
   homeHeroPoints: [
-    'Sci-fi, anime & more — one-click styles',
+    'Cinematic, anime, fantasy & more — one-click styles',
     'Cloud AI transforms your photo in seconds',
     'Free to use, no account needed',
   ],
@@ -44,7 +44,7 @@ export const en = {
 
   stylesSectionTitle: 'Explore the style library',
   stylesSectionSubtitle:
-    'From anime looks to sci-fi and classic painting styles — pick the one that fits your photo.',
+    'From cinematic editorials and cyberpunk cities to anime characters and dreamscapes — pick the one that fits your photo.',
   howSectionTitle: 'How it works',
   howSteps: [
     'Upload your photo',
@@ -67,15 +67,33 @@ export const en = {
   styleTitle: 'Choose a style',
   styleHint: 'Pick a style and transform your photo with cloud AI.',
   styles: {
-    hayao: { label: 'Hayao', description: 'Ghibli-like' },
-    shinkai: { label: 'Shinkai', description: 'Vivid & colorful' },
-    paprika: { label: 'Paprika', description: 'Bold & graphic' },
-    anime: { label: 'Anime', description: 'Japanese anime look' },
-    'sci-fi': { label: 'Sci-Fi', description: 'Futuristic neon glow' },
-    hk: { label: 'Hong Kong', description: 'Retro HK cinema' },
-    'oil-painting': { label: 'Oil Painting', description: 'Classic canvas texture' },
-    sketch: { label: 'Sketch', description: 'Pencil line drawing' },
-    watercolor: { label: 'Watercolor', description: 'Soft painted washes' },
+    'cinematic-editorial': { label: 'Cinematic Editorial', description: 'High-fashion editorial with cinematic atmosphere' },
+    'y2k-flash': { label: 'Y2K Flash', description: 'Early 2000s digital camera flash aesthetic' },
+    'street-style': { label: 'Street Style', description: 'Urban street fashion photography' },
+    'cyberpunk-city': { label: 'Cyberpunk City', description: 'Neon-lit futuristic cityscape' },
+    'anime-character': { label: 'Anime Character', description: 'Japanese anime character style' },
+    samurai: { label: 'Samurai', description: 'Traditional Japanese warrior' },
+    'space-explorer': { label: 'Space Explorer', description: 'Futuristic astronaut or space traveler' },
+    'fantasy-warrior': { label: 'Fantasy Warrior', description: 'Epic fantasy fighter with medieval armor' },
+    vampire: { label: 'Vampire', description: 'Gothic vampire with dark atmosphere' },
+    'western-cowboy': { label: 'Western Cowboy', description: 'Classic Wild West gunslinger' },
+    dreamscape: { label: 'Dreamscape', description: 'Surreal dreamy atmosphere' },
+    'underwater-world': { label: 'Underwater World', description: 'Submerged oceanic environment' },
+    'floating-city': { label: 'Floating City', description: 'Airborne metropolis in the sky' },
+    'post-apocalyptic': { label: 'Post-Apocalyptic', description: 'Dystopian wasteland' },
+    'cloud-kingdom': { label: 'Cloud Kingdom', description: 'Majestic realm among the clouds' },
+    'miniature-world': { label: 'Miniature World', description: 'Tiny detailed tilt-shift world' },
+    'double-exposure': { label: 'Double Exposure', description: 'Layered blend of two scenes' },
+    'crystal-world': { label: 'Crystal World', description: 'Crystalline structures with prismatic light' },
+    'toy-world': { label: 'Toy World', description: 'Playful toy-like scene' },
+    'floral-portrait': { label: 'Floral Portrait', description: 'Portrait adorned with flowers' },
+    'magazine-editorial': { label: 'Magazine', description: 'Ultra-realistic cinematic fashion magazine portrait' },
+    paparazzi: { label: 'Paparazzi', description: 'Candid paparazzi-style flash street photography' },
+    'minecraft-world': { label: 'Minecraft', description: 'Real photo turned into a Minecraft voxel block world' },
+    'food-infographic': { label: 'Food Infographic', description: 'Hyper-realistic food illustration with editorial infographic overlays' },
+    'isometric-map': { label: 'Isometric Map', description: 'Hand-drawn isometric schematic diagram of a street' },
+    'risograph-icons': { label: 'Risograph Icons', description: 'Risograph print style icon collection in a 2x2 grid' },
+    'metallic-logo': { label: 'Metallic Logo', description: 'Dark metallic heavy-lighted logos' },
   },
 
   loadingModel: 'Preparing…',
@@ -91,7 +109,7 @@ export const en = {
   errorModel: 'Failed to reach the AI service. Check your connection and try again.',
   errorProcess: 'Something went wrong while processing. Please try again.',
   errorInsufficientGenerations:
-    'Not enough Generations. Upgrade or wait for your monthly refresh.',
+    'Not enough Credits. Upgrade or wait for your monthly refresh.',
   errorProviderNotConfigured:
     'The AI service is not configured. Please try again later.',
   errorRateLimited:
@@ -121,7 +139,7 @@ export const en = {
 
   seo: {
     description:
-      'Turn your photos into anime, sci-fi, oil painting, sketch and watercolor art instantly with cloud AI. Free — choose from a growing style library.',
+      'Turn your photos into cinematic editorials, cyberpunk cityscapes, anime characters, dreamscapes and more instantly with cloud AI. Free — choose from a growing style library.',
   },
 
   create: {

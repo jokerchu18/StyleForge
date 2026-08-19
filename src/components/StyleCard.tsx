@@ -1,7 +1,5 @@
-import { useMemo } from 'react';
 import type { PublicStyleDefinition } from '../shared/style-types';
 import { resolveStyleMeta } from '../shared/styles';
-import { formatCount, formatLikes, formatUses } from '../lib/mockEngagement';
 
 interface Props {
   style: PublicStyleDefinition;
@@ -11,23 +9,16 @@ interface Props {
   selected?: boolean;
   /** Compact variant for the Image-to-Image picker. */
   compact?: boolean;
+  /** Override the card action label (default "Generate"). */
+  actionLabel?: string;
 }
 
 /**
  * Image-first Style card used across Home, Explore and the Image-to-Image
  * picker. Pure presentational — no business logic.
  */
-export default function StyleCard({ style, onUse, selected, compact }: Props) {
+export default function StyleCard({ style, onUse, selected, compact, actionLabel }: Props) {
   const { label, description } = resolveStyleMeta(style);
-  // Live counts from the DB catalog when present; deterministic mock as fallback.
-  const likes = useMemo(
-    () => (style.likeCount != null ? formatCount(style.likeCount) : formatLikes(style.id)),
-    [style.id, style.likeCount],
-  );
-  const uses = useMemo(
-    () => (style.usageCount != null ? formatCount(style.usageCount) : formatUses(style.id)),
-    [style.id, style.usageCount],
-  );
 
   return (
     <button
@@ -44,11 +35,8 @@ export default function StyleCard({ style, onUse, selected, compact }: Props) {
           alt={`${label} style preview`}
           loading="lazy"
         />
-        <span className="style-card-likes" aria-hidden="true">
-          ♥ {likes}
-        </span>
         <span className="style-card-overlay" aria-hidden="true">
-          <span className="style-card-use">Use Style</span>
+          <span className="style-card-use">{actionLabel ?? 'Generate'}</span>
         </span>
       </span>
 
@@ -57,12 +45,12 @@ export default function StyleCard({ style, onUse, selected, compact }: Props) {
           <strong className="style-card-name">{label}</strong>
           <span className="style-card-cat">{style.category}</span>
         </span>
-        <span className="style-card-meta">
-          <span className="style-card-uses">{uses} uses</span>
-          {!compact && description && (
-            <span className="style-card-desc">{description}</span>
-          )}
-        </span>
+        {!compact && description && (
+          <span className="style-card-desc">{description}</span>
+        )}
+        {style.costUnits != null && (
+          <span className="style-card-credit">{style.costUnits} credits</span>
+        )}
       </span>
     </button>
   );

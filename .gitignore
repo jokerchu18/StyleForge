@@ -27,3 +27,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Crawler: user-supplied URL/prompt lists (kept out of git; content is yours)
+scripts/image-sources/*.txt
+scripts/prompt-sources/*.txt
+STYLEFORGE_CONTENT.md
