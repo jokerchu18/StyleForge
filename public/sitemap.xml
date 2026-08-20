@@ -3,28 +3,34 @@
   <url>
     <loc>https://styleforge.org/</loc>
     <priority>1.0</priority>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://styleforge.org/image-to-image</loc>
     <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://styleforge.org/all-styles</loc>
     <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://styleforge.org/pricing</loc>
     <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
   </url>
   <url>
     <loc>https://styleforge.org/create-style</loc>
     <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
   </url>
   <url>
     <loc>https://styleforge.org/blog</loc>
     <priority>0.6</priority>
+    <changefreq>monthly</changefreq>
   </url>
-  <!-- Style detail pages (added one by one as styles are uploaded) -->
+  <!-- Style detail pages -->
   <url><loc>https://styleforge.org/styles/magazine-editorial</loc><priority>0.8</priority></url>
   <url><loc>https://styleforge.org/styles/paparazzi</loc><priority>0.8</priority></url>
   <url><loc>https://styleforge.org/styles/minecraft-world</loc><priority>0.8</priority></url>

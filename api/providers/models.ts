@@ -51,7 +51,7 @@ export const REPLICATE_MODEL_DEFS: Record<string, ReplicateModelDef> = {
     id: 'nano-banana-2',
     model: 'google/nano-banana-2',
     version: 'd1be8b5fc0931a253d417e12a484ac01ee9ccbc6daffd4792151377d5e5ff55f',
-    creditCost: 30,
+    creditCost: 50,
     buildInput: ({ imageBytes, mime, prompt, extra }) => ({
       image_input: [toDataUri(imageBytes, mime)],
       prompt,

@@ -6,7 +6,6 @@ import StyleGrid from '../components/StyleGrid';
 import SearchBar from '../components/SearchBar';
 import TopNav from '../components/TopNav';
 import { useStyles } from '../hooks/useStyles';
-import { resolveStyleMeta } from '../shared/styles';
 import { setPageMeta } from '../lib/seo';
 
 const HOW_IT_WORKS = [
@@ -22,15 +21,6 @@ const HOW_IT_WORKS = [
     title: 'Transform with AI',
     desc: 'Our image-to-image AI applies the selected Style\'s prompt and visual configuration to create a new version of your image.',
   },
-];
-
-const TRANSFORMATION_TITLES = [
-  'Cinematic Editorial',
-  'Y2K Flash',
-  'Street Style',
-  'Minecraft World',
-  'Fantasy Warrior',
-  'Dreamscape',
 ];
 
 export default function HomePage() {
@@ -53,8 +43,6 @@ export default function HomePage() {
   };
 
   const showcase = styles.slice(0, 7);
-  const transformations = styles.filter((s) => TRANSFORMATION_TITLES.includes(resolveStyleMeta(s).label));
-  const transformationsList = transformations.length ? transformations : styles.slice(0, 6);
 
   return (
     <AppLayout>
@@ -156,33 +144,132 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Creative Transformation Examples ────────────────── */}
-      <section id="examples" className="sp-section sp-alt">
+      {/* ── Powered by AI Prompts ──────────────────────────── */}
+      <section id="prompts" className="sp-section sp-alt">
         <div className="sp-inner">
           <div className="sp-section-head">
-            <h2 className="sp-section-title">Creative Transformations</h2>
-            <p className="sp-section-sub">Real photo-to-image results across popular styles.</p>
+            <h2 className="sp-section-title">Powered by Carefully Crafted AI Prompts</h2>
+            <p className="sp-section-sub">
+              Every Style combines carefully crafted AI prompts with visual direction to transform your original image.
+            </p>
           </div>
-          <StyleGrid>
-            {transformationsList.map((s) => (
-              <StyleCard key={s.id} style={s} onUse={(id) => navigate(`/styles/${id}`)} />
-            ))}
-          </StyleGrid>
+          <div className="prompt-showcase">
+            <figure className="prompt-figure">
+              <div className="prompt-img">
+                <img src="/styles/api/home-original.png" alt="Original photo before transformation" loading="lazy" />
+              </div>
+              <figcaption>Original Photo</figcaption>
+            </figure>
+            <span className="prompt-arrow">→</span>
+            <figure className="prompt-figure">
+              <div className="prompt-img">
+                <img src="/styles/api/home-transformed.png" alt="AI transformed result" loading="lazy" />
+              </div>
+              <figcaption>AI Transformation</figcaption>
+            </figure>
+          </div>
+          <div className="prompt-cta">
+            <strong className="prompt-style-name">Magazine Editorial</strong>
+            <span className="prompt-style-tag">AI Image Transformation</span>
+            <button
+              type="button"
+              className="btn-primary btn-lg"
+              onClick={() => navigate('/image-to-image')}
+            >
+              Try Image to Image →
+            </button>
+          </div>
         </div>
       </section>
 
-      {/* ── CTA ─────────────────────────────────────────────── */}
-      <section id="cta" className="sp-section">
-        <div className="sp-inner sp-cta">
-          <h2 className="sp-section-title">Ready to transform your image?</h2>
-          <p className="sp-section-sub">
-            Upload a photo, choose a Style, and transform it with AI. It's free to start.
-          </p>
-          <button type="button" className="btn-primary btn-lg" onClick={() => navigate('/image-to-image')}>
-            Try Image to Image
-          </button>
+      {/* ── Create Your Own Style ─────────────────────────── */}
+      <section id="create-your-own" className="sp-section">
+        <div className="sp-inner">
+          <div className="sp-section-head">
+            <h2 className="sp-section-title">Create Your Own Style</h2>
+            <p className="sp-section-sub">
+              Turn your creative ideas into reusable AI Styles. Describe the visual direction you want, then use your Style to transform images whenever inspiration strikes.
+            </p>
+          </div>
+          <div className="create-style-card">
+            <div className="create-style-left">
+              <span className="create-style-label">Create a Style</span>
+              <h3 className="create-style-heading">Turn an idea into an AI Style.</h3>
+              <p className="create-style-desc">
+                Describe the visual direction you want. StyleForge turns your idea into a reusable Style for image transformation.
+              </p>
+              <div className="create-style-prompt-box">
+                <span className="create-style-prompt-placeholder">Describe your style...</span>
+                <span className="create-style-prompt-text">
+                  Cinematic retro-futuristic street<br />
+                  photography with dramatic lighting...
+                </span>
+              </div>
+              <button
+                type="button"
+                className="btn-primary btn-lg"
+                onClick={() => navigate('/create-style')}
+              >
+                Create Your Own Style →
+              </button>
+            </div>
+            <div className="create-style-right">
+              <div className="create-style-preview">
+                <img src="/styles/api/home-create-style.png" alt="Custom Style preview example" loading="lazy" />
+              </div>
+              <div className="create-style-preview-meta">
+                <strong className="create-style-preview-name">Japanese Anime</strong>
+                <span className="create-style-preview-tags">Anime · Cel Shading · Vibrant · Character Focus</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
+
+      {/* ── Site Footer ────────────────────────────────────── */}
+      <footer className="footer">
+        <div className="footer-inner">
+          {/* Brand */}
+          <div className="footer-col footer-brand">
+            <div className="footer-logo">
+              <span className="footer-logo-name">StyleForge</span>
+            </div>
+            <p className="footer-tagline">Transform images with AI Styles.</p>
+            <p className="footer-copy">© 2026 StyleForge. All rights reserved.</p>
+          </div>
+
+          {/* Navigation */}
+          <div className="footer-col">
+            <h4 className="footer-col-title">Navigation</h4>
+            <nav className="footer-links">
+              <a href="/image-to-image">Image to Image</a>
+              <a href="/all-styles">All Styles</a>
+              <a href="/create-style">Create a Style</a>
+              <a href="/image-to-image">AI Image Transformation</a>
+            </nav>
+          </div>
+
+          {/* Support */}
+          <div className="footer-col">
+            <h4 className="footer-col-title">Support</h4>
+            <nav className="footer-links">
+              <a href="/contact">Contact Us</a>
+              <a href="/about">About Us</a>
+              <a href="/pricing">Pricing</a>
+            </nav>
+          </div>
+
+          {/* Legal */}
+          <div className="footer-col">
+            <h4 className="footer-col-title">Legal</h4>
+            <nav className="footer-links">
+              <a href="/privacy">Privacy Policy</a>
+              <a href="/terms">Terms of Service</a>
+              <a href="/refund">Refund Policy</a>
+            </nav>
+          </div>
+        </div>
+      </footer>
     </AppLayout>
   );
 }

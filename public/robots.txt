@@ -2,4 +2,5 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
+# Sitemap
 Sitemap: https://styleforge.org/sitemap.xml

@@ -8,6 +8,11 @@ import StyleDetailPage from './pages/StyleDetailPage';
 import CreationsPage from './pages/CreationsPage';
 import PricingPage from './pages/PricingPage';
 import AccountPage from './pages/AccountPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
+import ContactPage from './pages/ContactPage';
+import AboutPage from './pages/AboutPage';
+import RefundPage from './pages/RefundPage';
 import { AccountProvider } from './hooks/useAccount';
 
 export default function App() {
@@ -24,6 +29,11 @@ export default function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/account" element={<AccountPage />} />
         <Route path="/blog" element={<BlogPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/refund" element={<RefundPage />} />
         {/* Legacy aliases */}
         <Route path="/tool" element={<Navigate to="/image-to-image" replace />} />
         <Route path="/explore" element={<Navigate to="/all-styles" replace />} />
