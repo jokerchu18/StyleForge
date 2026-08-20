@@ -12,8 +12,8 @@ import {
   finalizeGenerationSuccess,
   finalizeGenerationFailure,
 } from './_shared/billing.js';
-import { downloadOutput } from './providers/replicate.js';
-import { resolveModelDef } from './providers/models.js';
+import { downloadOutput } from './_providers/replicate.js';
+import { resolveModelDef } from './_providers/models.js';
 
 export default async function handler(
   req: IncomingMessage,

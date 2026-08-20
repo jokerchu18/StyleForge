@@ -11,7 +11,7 @@ import type {
 import { supabaseAdmin } from './supabase.js';
 import { ApiError } from './errors.js';
 import { computeGenerationCost } from './pricing.js';
-import { modelCreditCost } from '../providers/models.js';
+import { modelCreditCost } from '../_providers/models.js';
 
 export interface StyleCatalog {
   list(): Promise<StyleDefinition[]>;

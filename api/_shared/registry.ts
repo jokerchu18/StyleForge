@@ -1,10 +1,10 @@
 import type { ProviderId } from '../../src/shared/generate-types.js';
 import type { ImageProvider } from './provider.js';
 import { ApiError } from './errors.js';
-import { dashscopeProvider } from '../providers/dashscope.js';
-import { seedreamProvider } from '../providers/seedream.js';
-import { replicateProvider } from '../providers/replicate.js';
-import { mockProvider } from '../providers/mock.js';
+import { dashscopeProvider } from '../_providers/dashscope.js';
+import { seedreamProvider } from '../_providers/seedream.js';
+import { replicateProvider } from '../_providers/replicate.js';
+import { mockProvider } from '../_providers/mock.js';
 
 export const PROVIDERS: Record<ProviderId, ImageProvider> = {
   dashscope: dashscopeProvider,

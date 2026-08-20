@@ -31,8 +31,8 @@ import {
   createPrediction,
   downloadOutput,
   getPredictionResult,
-} from './providers/replicate.js';
-import { resolveModelDef } from './providers/models.js';
+} from './_providers/replicate.js';
+import { resolveModelDef } from './_providers/models.js';
 
 function parseQuery(url: string | undefined): Record<string, string> {
   const q = url?.split('?')[1];
