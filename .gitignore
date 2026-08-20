@@ -32,3 +32,9 @@ dist-ssr
 scripts/image-sources/*.txt
 scripts/prompt-sources/*.txt
 STYLEFORGE_CONTENT.md
+
+# Database migrations (applied via Supabase dashboard, not part of frontend)
+supabase/migrations/
+
+# Documentation
+docs/

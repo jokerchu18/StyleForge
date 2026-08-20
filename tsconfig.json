@@ -1,8 +1,14 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" },
-    { "path": "./tsconfig.api.json" }
-  ]
+  "compilerOptions": {
+    "types": ["node"],
+    "skipLibCheck": true,
+    "target": "es2023",
+    "lib": ["ES2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "erasableSyntaxOnly": true
+  },
+  "include": ["api"]
 }

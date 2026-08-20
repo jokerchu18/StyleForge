@@ -5,15 +5,11 @@
     "lib": ["ES2023"],
     "types": ["node"],
     "skipLibCheck": true,
-
-    /* Node runtime (Vercel Functions run on Node 20+). */
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
-
-    /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
