@@ -1,44 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://styleforge.org/</loc>
+    <loc>https://www.styleforge.org/</loc>
     <priority>1.0</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://styleforge.org/image-to-image</loc>
+    <loc>https://www.styleforge.org/image-to-image</loc>
     <priority>0.9</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://styleforge.org/all-styles</loc>
+    <loc>https://www.styleforge.org/all-styles</loc>
     <priority>0.9</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://styleforge.org/pricing</loc>
-    <priority>0.7</priority>
-    <changefreq>monthly</changefreq>
+    <loc>https://www.styleforge.org/create-style</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://styleforge.org/create-style</loc>
+    <loc>https://www.styleforge.org/pricing</loc>
     <priority>0.7</priority>
-    <changefreq>monthly</changefreq>
-  </url>
-  <url>
-    <loc>https://styleforge.org/blog</loc>
-    <priority>0.6</priority>
     <changefreq>monthly</changefreq>
   </url>
   <!-- Style detail pages -->
-  <url><loc>https://styleforge.org/styles/magazine-editorial</loc><priority>0.8</priority></url>
-  <url><loc>https://styleforge.org/styles/paparazzi</loc><priority>0.8</priority></url>
-  <url><loc>https://styleforge.org/styles/minecraft-world</loc><priority>0.8</priority></url>
-  <url><loc>https://styleforge.org/styles/food-infographic</loc><priority>0.8</priority></url>
-  <url><loc>https://styleforge.org/styles/isometric-map</loc><priority>0.8</priority></url>
-  <url><loc>https://styleforge.org/styles/risograph-icons</loc><priority>0.8</priority></url>
-  <url><loc>https://styleforge.org/styles/metallic-logo</loc><priority>0.8</priority></url>
-  <url><loc>https://styleforge.org/styles/sticker-art</loc><priority>0.8</priority></url>
-  <url><loc>https://styleforge.org/styles/ink-illustration</loc><priority>0.8</priority></url>
-  <url><loc>https://styleforge.org/styles/lego-world</loc><priority>0.8</priority></url>
+  <url><loc>https://www.styleforge.org/styles/magazine-editorial</loc><priority>0.8</priority></url>
+  <url><loc>https://www.styleforge.org/styles/paparazzi</loc><priority>0.8</priority></url>
+  <url><loc>https://www.styleforge.org/styles/minecraft-world</loc><priority>0.8</priority></url>
+  <url><loc>https://www.styleforge.org/styles/food-infographic</loc><priority>0.8</priority></url>
+  <url><loc>https://www.styleforge.org/styles/isometric-map</loc><priority>0.8</priority></url>
+  <url><loc>https://www.styleforge.org/styles/risograph-icons</loc><priority>0.8</priority></url>
+  <url><loc>https://www.styleforge.org/styles/metallic-logo</loc><priority>0.8</priority></url>
+  <url><loc>https://www.styleforge.org/styles/sticker-art</loc><priority>0.8</priority></url>
+  <url><loc>https://www.styleforge.org/styles/ink-illustration</loc><priority>0.8</priority></url>
+  <url><loc>https://www.styleforge.org/styles/lego-world</loc><priority>0.8</priority></url>
 </urlset>

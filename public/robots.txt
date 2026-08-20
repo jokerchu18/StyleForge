@@ -3,4 +3,4 @@ Allow: /
 Disallow: /api/
 
 # Sitemap
-Sitemap: https://styleforge.org/sitemap.xml
+Sitemap: https://www.styleforge.org/sitemap.xml
