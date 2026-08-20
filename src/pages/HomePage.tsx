@@ -34,6 +34,29 @@ export default function HomePage() {
       'AI Image Transformation & Image-to-Image AI | StyleForge',
       'Transform your photos with AI image transformation and curated image-to-image styles. Turn portraits into anime, cartoon, cinematic, cyberpunk, and more.',
     );
+    // Structured data for AI engines (GEO)
+    const ld = document.createElement('script');
+    ld.setAttribute('type', 'application/ld+json');
+    ld.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'StyleForge',
+      url: 'https://www.styleforge.org/',
+      applicationCategory: 'Multimedia',
+      operatingSystem: 'Web',
+      description: 'Transform your images with AI-powered Styles. Upload a photo, choose a curated AI Style, and get a transformed result powered by carefully crafted prompts.',
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+      },
+      author: {
+        '@type': 'Organization',
+        name: 'StyleForge',
+        url: 'https://www.styleforge.org',
+      },
+    });
+    document.head.appendChild(ld);
   }, []);
 
   const submitSearch = (e: React.FormEvent) => {

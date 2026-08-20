@@ -1,0 +1,19 @@
+# StyleForge
+> Transform your images with AI-powered Styles. Upload a photo, choose a curated AI Style, and get a transformed result powered by carefully crafted prompts.
+
+## Core pages
+- https://www.styleforge.org/ : AI Image Transformation platform — home page
+- https://www.styleforge.org/image-to-image : Upload and transform your photos with AI image-to-image technology
+- https://www.styleforge.org/all-styles : Browse all curated AI image transformation styles
+- https://www.styleforge.org/create-style : Create your own custom AI Style
+- https://www.styleforge.org/pricing : Credit plans and pricing
+
+## Key features
+- Image-to-image AI transformation
+- Curated AI Styles with carefully crafted prompts
+- Custom AI Style creation
+- Before/after image comparison
+- Credit-based usage system
+
+## Contact
+- Email: support@styleforge.org

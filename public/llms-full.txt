@@ -1,0 +1,72 @@
+# StyleForge
+
+StyleForge is an AI-powered image transformation platform. Unlike simple photo filters, every Style is powered by a carefully crafted AI prompt that controls composition, lighting, atmosphere, character details, color, and visual texture.
+
+## Pages
+
+### Home
+https://www.styleforge.org/
+The landing page introduces StyleForge's core value proposition: transform your images with AI Styles. Sections include:
+- Hero: "Transform Your Images with AI"
+- AI Image Transformation: three core features explained
+- How It Works: three-step guide (Upload → Choose a Style → Transform with AI)
+- Create Your Own Style: turn ideas into reusable AI Styles
+- Powered by Carefully Crafted AI Prompts: before/after comparison showing how AI prompts drive transformations
+- Explore AI Image Transformation Styles: curated style showcase with 7 featured styles
+- Footer: navigation, support, legal links
+
+### Image to Image
+https://www.styleforge.org/image-to-image
+The main tool page. Upload an image, choose a style from the categorized grid, and generate an AI transformation. Features:
+- Left panel: image upload area with preview
+- Right panel: style selector with category tabs (Trending, Character, Worlds, Creative)
+- Generation progress with dynamic tips
+- Before/after comparison slider
+- IndexedDB cache for session recovery on refresh
+
+### All Styles
+https://www.styleforge.org/all-styles
+Browse the complete catalog of AI image transformation styles. Search and filter by category. Each style card shows a preview image, style name, category, and credit cost. Click through to the style detail page.
+
+### Create a Style
+https://www.styleforge.org/create-style
+Create a custom AI Style by describing the visual direction you want. Select a base model (FLUX Kontext Pro, Nano Banana 2, or GPT Image 2) and write a prompt that defines the transformation.
+
+### Pricing
+https://www.styleforge.org/pricing
+Credit-based pricing plans. Free tier includes 40 credits to start. Plus and Pro plans offer more credits and additional features like HD generation, commercial use, and premium styles.
+
+## AI Styles Catalog
+
+### Trending
+- Magazine Editorial: ultra-realistic fashion editorial with cinematic lighting
+- Paparazzi: candid flash photography style
+
+### Character
+- Sticker Art: minimalist black-and-white hand-drawn sticker style
+- Ink Illustration: minimalist ink illustration on matte paper
+
+### Worlds
+- Minecraft World: voxel block world transformation
+- Lego World: Lego brick-built environment
+- Isometric Map: hand-drawn isometric schematic diagram
+
+### Creative
+- Food Infographic: detailed editorial food illustration
+- Risograph Icons: risograph-print icon collection
+- Metallic Logo: dark metallic logo design
+- Anime: Japanese anime style illustration
+- Sci-Fi: futuristic neon glow aesthetic
+- Hong Kong: retro Hong Kong cinema look
+- Oil Painting: classic canvas texture
+- Watercolor: soft painted washes
+
+## Technology
+- Frontend: React 19, TypeScript, Vite
+- AI Models: FLUX Kontext Pro, Nano Banana 2, GPT Image 2 (via Replicate)
+- Storage: Supabase (Postgres + Storage)
+- Auth: Supabase Auth (Google OAuth)
+- Deployment: Vercel (Serverless Functions + SPA)
+
+## Contact
+- Email: support@styleforge.org
