@@ -28,7 +28,7 @@ export const seedreamProvider: ImageProvider = {
     try {
       const fd = new FormData();
       fd.set('model', model);
-      fd.set('image', new Blob([opts.imageBytes as BlobPart], { type: opts.mime }), `input.${extForMime(opts.mime)}`);
+      fd.set('image', new Blob([opts.imageBytes as any], { type: opts.mime }), `input.${extForMime(opts.mime)}`);
       fd.set('prompt', opts.style.prompt ?? '');
       fd.set('guidance_scale', '2.5');
       const seed = opts.style.providerOverrides?.seedream?.seed;
