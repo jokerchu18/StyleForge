@@ -7,19 +7,20 @@ import SearchBar from '../components/SearchBar';
 import TopNav from '../components/TopNav';
 import { useStyles } from '../hooks/useStyles';
 import { resolveStyleMeta } from '../shared/styles';
+import { setPageMeta } from '../lib/seo';
 
 const HOW_IT_WORKS = [
   {
-    title: 'Upload your image',
-    desc: 'Drag in a portrait, a landscape, or any photo you want to restyle.',
+    title: 'Upload Your Photo',
+    desc: 'Start with a portrait, selfie, landscape, travel photo, or any image you want to transform.',
   },
   {
-    title: 'Pick a style',
-    desc: 'Choose from cinematic editorial, anime character, cyberpunk and more.',
+    title: 'Choose a Style',
+    desc: 'Explore curated styles designed for AI image transformation, from anime and cartoon to cinematic, cyberpunk, fantasy, Y2K, and more.',
   },
   {
-    title: 'Generate with AI',
-    desc: 'Our image-to-image engine transforms it into a brand new visual.',
+    title: 'Transform with AI',
+    desc: 'Our image-to-image AI applies the selected Style\'s prompt and visual configuration to create a new version of your image.',
   },
 ];
 
@@ -39,7 +40,10 @@ export default function HomePage() {
   const styles = catalog?.styles ?? [];
 
   useEffect(() => {
-    document.title = 'StyleForge — AI Image Transformation & Image to Image Tool';
+    setPageMeta(
+      'AI Image Transformation & Image-to-Image AI | StyleForge',
+      'Transform your photos with AI image transformation and curated image-to-image styles. Turn portraits into anime, cartoon, cinematic, cyberpunk, and more.',
+    );
   }, []);
 
   const submitSearch = (e: React.FormEvent) => {
@@ -48,7 +52,7 @@ export default function HomePage() {
     navigate(q ? `/all-styles?q=${encodeURIComponent(q)}` : '/all-styles');
   };
 
-  const showcase = styles.slice(0, 8);
+  const showcase = styles.slice(0, 7);
   const transformations = styles.filter((s) => TRANSFORMATION_TITLES.includes(resolveStyleMeta(s).label));
   const transformationsList = transformations.length ? transformations : styles.slice(0, 6);
 
@@ -62,11 +66,11 @@ export default function HomePage() {
             <span className="sp-hero-accent">with AI.</span>
           </h1>
           <p className="sp-hero-sub">
-            Transform existing images into new visuals with AI — cinematic editorials, anime characters, cyberpunk worlds and more.
+            Turn your photos into cinematic editorials, anime characters, cartoon portraits, futuristic worlds, and more with AI image transformation.
           </p>
           <div className="sp-hero-cta">
             <button type="button" className="btn-primary btn-lg" onClick={() => navigate('/image-to-image')}>
-              Try AI Image
+              Try Image to Image
             </button>
           </div>
           <form className="sp-hero-search" onSubmit={submitSearch}>
@@ -83,21 +87,21 @@ export default function HomePage() {
           <div className="sp-section-head">
             <h2 className="sp-section-title">AI Image Transformation</h2>
             <p className="sp-section-sub">
-              StyleForge is an image-to-image AI tool. Upload a photo, pick a visual style, and get a transformed result — no prompt engineering required.
+              StyleForge transforms your existing photos into completely new visual styles with image-to-image AI. Upload an image, choose a Style, and let a carefully crafted AI prompt guide the transformation.
             </p>
           </div>
           <div className="ai-image-features">
             <div className="ai-image-feature">
-              <h3>Image to Image</h3>
-              <p>Your source photo drives the result — identity, pose and composition are preserved while the style is reimagined.</p>
+              <h3>Image-to-Image AI</h3>
+              <p>Start with your own photo and transform it into a new visual while keeping the subject and important elements recognizable.</p>
             </div>
             <div className="ai-image-feature">
-              <h3>AI Photo Restyling</h3>
-              <p>Turn an ordinary photo into a cinematic portrait, a fashion editorial, an anime character or a fantasy world.</p>
+              <h3>Transform with AI Styles</h3>
+              <p>Choose from cinematic, anime, cartoon, cyberpunk, fantasy, Y2K, fashion, and other curated visual styles.</p>
             </div>
             <div className="ai-image-feature">
-              <h3>No Prompt Needed</h3>
-              <p>Every style carries its own prompt configuration. You just choose a look and press generate.</p>
+              <h3>Curated AI Prompts</h3>
+              <p>Every Style is powered by a carefully crafted AI prompt designed to guide the transformation's lighting, composition, color, atmosphere, texture, and visual direction.</p>
             </div>
           </div>
         </div>
@@ -107,7 +111,7 @@ export default function HomePage() {
       <section id="how-it-works" className="sp-section sp-alt">
         <div className="sp-inner">
           <div className="sp-section-head">
-            <h2 className="sp-section-title">Three steps to a new image</h2>
+            <h2 className="sp-section-title">Transform Your Photo in Three Steps</h2>
           </div>
           <div className="how-grid">
             {HOW_IT_WORKS.map((step) => (
@@ -119,7 +123,7 @@ export default function HomePage() {
           </div>
           <div className="sp-section-cta">
             <button type="button" className="btn-primary btn-lg" onClick={() => navigate('/image-to-image')}>
-              Try AI Image
+              Try Image to Image
             </button>
           </div>
         </div>
@@ -129,19 +133,26 @@ export default function HomePage() {
       <section id="styles" className="sp-section">
         <div className="sp-inner">
           <div className="sp-section-head">
-            <h2 className="sp-section-title">Explore our style library</h2>
-            <p className="sp-section-sub">Curated image-to-image styles across every category.</p>
+            <h2 className="sp-section-title">Explore AI Image Transformation Styles</h2>
+            <p className="sp-section-sub">
+              Discover Styles designed to transform your existing images into new visual worlds. Turn a photo into an anime character, reimagine a portrait as cartoon art, create a cinematic editorial, or explore futuristic and fantasy aesthetics.
+            </p>
           </div>
-          <StyleGrid>
+          <StyleGrid className="style-grid--home">
             {showcase.map((s) => (
               <StyleCard key={s.id} style={s} onUse={(id) => navigate(`/styles/${id}`)} />
             ))}
-          </StyleGrid>
-          <div className="sp-section-cta">
-            <button type="button" className="btn-ghost btn-lg" onClick={() => navigate('/all-styles')}>
-              Explore All Styles
+            <button
+              type="button"
+              className="style-card style-card-all"
+              onClick={() => navigate('/all-styles')}
+            >
+              <span className="style-card-all-inner">
+                <strong>Explore All Styles</strong>
+                <span>→</span>
+              </span>
             </button>
-          </div>
+          </StyleGrid>
         </div>
       </section>
 
@@ -165,10 +176,10 @@ export default function HomePage() {
         <div className="sp-inner sp-cta">
           <h2 className="sp-section-title">Ready to transform your image?</h2>
           <p className="sp-section-sub">
-            It’s free to start. Upload a photo and generate your first AI image in seconds.
+            Upload a photo, choose a Style, and transform it with AI. It's free to start.
           </p>
           <button type="button" className="btn-primary btn-lg" onClick={() => navigate('/image-to-image')}>
-            Try AI Image
+            Try Image to Image
           </button>
         </div>
       </section>

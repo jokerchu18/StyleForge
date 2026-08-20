@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import AppLayout from '../components/layout/AppLayout';
 import { useAccount } from '../hooks/useAccount';
+import { setPageMeta } from '../lib/seo';
 
 function formatDate(ts: string): string {
   try {
@@ -17,7 +18,7 @@ export default function AccountPage() {
   const { account, loading } = useAccount();
 
   useEffect(() => {
-    document.title = 'My Account | StyleForge';
+    setPageMeta('My Account | StyleForge', 'Your credits, plan, and generation history.');
   }, []);
 
   return (
@@ -69,8 +70,8 @@ export default function AccountPage() {
                 </div>
               ) : (
                 <div className="empty-state">
-                  <strong>No activity yet</strong>
-                  <span>Generate an image and your credits will show up here.</span>
+                  <strong>No Credit Activity Yet</strong>
+                  <span>Your credit usage and generation history will appear here.</span>
                 </div>
               )}
             </section>

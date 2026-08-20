@@ -52,7 +52,7 @@ export default function ResultCompare({
         <img
           className="compare-result"
           src={resultUrl}
-          alt={`${style} anime result`}
+          alt={`Photo transformed with ${style} style`}
           draggable={false}
         />
         {/* Original clipped by slider */}

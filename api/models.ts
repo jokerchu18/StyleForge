@@ -1,36 +1,25 @@
-// GET /api/models — serve the preset Replicate model list for the Create Style
-// form. Configured via the REPLICATE_MODELS env var (a JSON array of
-// { id, label }). Kept server-side so the list is managed by config, not code.
+// GET /api/models — serve the three available models for the Create Style form.
+// The list is hardcoded in api/providers/models.ts.
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { sendJson, methodNotAllowed } from './_shared/http.js';
 
 export interface ReplicateModelOption {
-  /** Full Replicate model identifier "owner/name" or "owner/name:version". */
+  /** Model registry id, e.g. 'nano-banana-2' or 'gpt-image-2'. */
   id: string;
   label: string;
 }
+
+/** Three available models. The label is what users see in the form. */
+const MODELS: ReplicateModelOption[] = [
+  { id: 'flux-kontext-pro', label: 'FLUX Kontext Pro' },
+  { id: 'nano-banana-2', label: 'Nano Banana 2' },
+  { id: 'gpt-image-2', label: 'GPT Image 2' },
+];
 
 export default async function handler(
   req: IncomingMessage,
   res: ServerResponse,
 ): Promise<void> {
   if (methodNotAllowed(req, res, ['GET'])) return;
-
-  const raw = process.env.REPLICATE_MODELS;
-  let models: ReplicateModelOption[] = [];
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        models = parsed
-          .filter((m) => m && typeof m.id === 'string' && typeof m.label === 'string')
-          .map((m) => ({ id: m.id, label: m.label }));
-      }
-    } catch {
-      // Malformed env — return empty list rather than crash.
-      models = [];
-    }
-  }
-
-  sendJson(res, 200, { models });
+  sendJson(res, 200, { models: MODELS });
 }

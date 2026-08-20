@@ -2,24 +2,25 @@ import { useEffect } from 'react';
 import AppLayout from '../components/layout/AppLayout';
 import { usePricing } from '../hooks/usePricing';
 import { useAccount } from '../hooks/useAccount';
+import { setPageMeta } from '../lib/seo';
 
 const PLAN_FEATURES: Record<string, string[]> = {
-  free: ['40 Credits / month', 'Standard generation', 'Explore styles', 'Save styles'],
+  free: ['40 Credits / month', 'Standard AI generation', 'Explore all Styles', 'Save Styles'],
   plus: [
     '2000 Credits / month',
-    'All styles + Premium styles',
-    'HD generation',
+    'All Styles, including Premium Styles',
+    'HD image generation',
     'No watermark',
     'Commercial use',
     'Credit history',
   ],
   pro: [
     '6000 Credits / month',
-    'All styles + Premium models',
-    'HD / High resolution',
-    'Priority queue',
+    'All Styles and Premium models',
+    'HD and high-resolution generation',
+    'Priority generation queue',
     'Advanced generation options',
-    'Style creation & publishing',
+    'Create and publish your own Styles',
   ],
 };
 
@@ -28,17 +29,16 @@ export default function PricingPage() {
   const { account } = useAccount();
 
   useEffect(() => {
-    document.title = 'Pricing | StyleForge';
+    setPageMeta('Pricing | StyleForge', 'Pay for generations, not individual styles. Plans start at 40 credits per month — free to start.');
   }, []);
 
   return (
     <AppLayout>
       <div className="pricing">
         <div className="pricing-head">
-          <h1>Credits, not subscriptions per style.</h1>
+          <h1>Pay for Generations, Not Individual Styles</h1>
           <p className="hero-sub">
-            Every generation spends credits — you pay for image generations,
-            nothing else.
+            Every AI image generation uses credits. Use your credits across the entire StyleForge library and transform your images with any available Style.
           </p>
         </div>
 

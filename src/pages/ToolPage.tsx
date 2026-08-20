@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import StyleCard from '../components/StyleCard';
-import StyleGrid from '../components/StyleGrid';
+import CategoryTabs from '../components/CategoryTabs';
 import UploadDropzone from '../components/UploadDropzone';
 import ProcessingOverlay from '../components/ProcessingOverlay';
 import ResultCompare from '../components/ResultCompare';
@@ -15,9 +15,28 @@ import { resolveStyleMeta } from '../shared/styles';
 import { useStyles } from '../hooks/useStyles';
 import { useAuth } from '../hooks/useAuth';
 import { useAccount } from '../hooks/useAccount';
+import { setPageMeta } from '../lib/seo';
+import { saveLastGeneration, loadLastGeneration, clearLastGeneration } from '../lib/idb-cache';
 import type { ProviderId } from '../shared/generate-types';
 
 type Phase = 'idle' | 'ready' | 'loading' | 'processing' | 'done';
+
+const TIPS = [
+  'Each Style is powered by a carefully crafted AI prompt.',
+  'Your original image stays recognizable — the AI transforms the style, not the subject.',
+  'You can try the same photo with different Styles to see completely different results.',
+  'StyleForge uses image-to-image AI to preserve your composition while changing the visual direction.',
+  'AI prompts guide the lighting, color, atmosphere, texture, and mood of your transformation.',
+  'You can upload portraits, landscapes, travel photos, or product shots.',
+  'Every generation uses credits — check your balance in the top navigation.',
+  'More Styles are added regularly. Check back for new visual transformations.',
+];
+
+const MODEL_NAMES: Record<string, string> = {
+  'flux-kontext-pro': 'FLUX Kontext Pro',
+  'nano-banana-2': 'Nano Banana 2',
+  'gpt-image-2': 'GPT Image 2',
+};
 
 const SEO_FAQ = [
   {
@@ -26,20 +45,23 @@ const SEO_FAQ = [
   },
   {
     q: 'How does image-to-image AI work?',
-    a: 'You upload a photo and choose a style. Each style is a preset prompt configuration that tells the AI how to transform your image. The model regenerates the photo in that style, keeping your composition and subject.',
+    a: 'You upload a photo and choose a Style. Each Style is a carefully crafted AI prompt configuration that tells the model how to transform your image.',
   },
   {
     q: 'What can I transform with AI?',
-    a: 'Portraits, landscapes, product photos, travel shots — anything. Popular transformations include anime photo transformation, cinematic photo transformation, Y2K photo transformation and AI fashion photo.',
+    a: 'Portraits, landscapes, product photos, travel shots — anything. Popular transformations include anime photo transformation, cinematic photo transformation, and Y2K photo transformation.',
   },
 ];
 
 export default function ToolPage() {
   useEffect(() => {
-    document.title = 'AI Image Transformation & Image to Image Tool | StyleForge';
+    setPageMeta(
+      'AI Image Transformation & Image-to-Image AI | StyleForge',
+      'Transform any photo with image-to-image AI. Upload an image, choose a Style, and create a completely new visual in seconds.',
+    );
   }, []);
 
-  const { user, loading: authLoading, signInWithGoogle } = useAuth();
+  const { user, signInWithGoogle } = useAuth();
   const { refresh: refreshAccount } = useAccount();
   const [searchParams] = useSearchParams();
   const initialStyle = searchParams.get('style') ?? '';
@@ -51,13 +73,21 @@ export default function ToolPage() {
   const [result, setResult] = useState<HTMLCanvasElement | null>(null);
   const [error, setError] = useState('');
   const [providerChain, setProviderChain] = useState<ProviderId[]>(['mock']);
+  const [category, setCategory] = useState('all');
+  const [tipIndex, setTipIndex] = useState(0);
 
   const catalog = useStyles();
   const allStyles = useMemo(() => catalog?.styles ?? [], [catalog]);
-  const featureStyles = allStyles.filter((s) => s.engine === 'cloud');
+  const categories = useMemo(() => catalog?.categories ?? [], [catalog]);
 
-  // Pick the requested style (via ?style=) or the first cloud style once the
-  // catalog is loaded.
+  const featureStyles = useMemo(() => {
+    let list = allStyles.filter((s) => s.engine === 'cloud');
+    if (category !== 'all') {
+      list = list.filter((s) => s.category === category);
+    }
+    return list;
+  }, [allStyles, category]);
+
   const initialized = useRef(false);
   useEffect(() => {
     if (!catalog || initialized.current) return;
@@ -74,72 +104,81 @@ export default function ToolPage() {
   useEffect(() => {
     getHealth()
       .then((h) => {
-        const available = (Object.keys(h.providers) as ProviderId[]).filter(
-          (id) => h.providers[id],
-        );
+        const available = (Object.keys(h.providers) as ProviderId[]).filter((id) => h.providers[id]);
         const real = available.filter((id) => id !== 'mock');
-        // Replicate (FLUX default) first; other providers are fallback.
         const chain: ProviderId[] = real.length
           ? [...real].sort((a, b) => (a === 'replicate' ? -1 : b === 'replicate' ? 1 : 0))
-          : available.includes('mock')
-            ? ['mock']
-            : [];
+          : available.includes('mock') ? ['mock'] : [];
         if (chain.length) setProviderChain(chain);
       })
       .catch(() => {});
   }, []);
 
+  // Restore last generation from IndexedDB cache (24h expiry).
+  useEffect(() => {
+    loadLastGeneration().then(async (cached) => {
+      if (!cached) return;
+      try {
+        // Reconstruct the original canvas from the cached blob.
+        const img = await loadImageFromFile(new File([cached.originalBlob], 'cached', { type: cached.originalBlob.type }));
+        const apiCanvas = resizeToCanvas(img, 1024).canvas;
+        setApiOriginal(apiCanvas);
+        setUploadBlob(cached.originalBlob);
+        setStyleId(cached.styleId);
+        // Reconstruct the result canvas.
+        const resultCanvas = await blobToCanvas(cached.resultBlob);
+        setResult(resultCanvas);
+        setPhase('done');
+        setFileName(cached.styleLabel);
+      } catch {
+        // Cache miss or corrupted — silently ignore.
+      }
+    });
+  }, []);
+
   const handleFile = useCallback(async (file: File) => {
-    setError('');
-    setResult(null);
+    setError(''); setResult(null);
     try {
       const img = await loadImageFromFile(file);
       const apiCanvas = resizeToCanvas(img, 1024).canvas;
       const blob = await new Promise<Blob>((resolve, reject) => {
-        apiCanvas.toBlob(
-          (b) => (b ? resolve(b) : reject(new Error('toBlob failed'))),
-          'image/jpeg',
-          0.85,
-        );
+        apiCanvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/jpeg', 0.85);
       });
-      setFileName(file.name);
-      setApiOriginal(apiCanvas);
-      setUploadBlob(blob);
-      setPhase('ready');
-    } catch {
-      setError(en.errorInvalidImage);
-      setPhase('idle');
-    }
+      setFileName(file.name); setApiOriginal(apiCanvas); setUploadBlob(blob); setPhase('ready');
+    } catch { setError(en.errorInvalidImage); setPhase('idle'); }
   }, []);
 
   const processApi = useCallback(async () => {
     if (!uploadBlob || !styleId) return;
-    setError('');
-    setPhase('loading');
+    setError(''); setPhase('loading');
     try {
       let started = null;
       let lastError: unknown = new Error('No generation providers available');
       for (const provider of providerChain) {
-        try {
-          started = await startGeneration({ styleId, provider }, uploadBlob);
-          break;
-        } catch (err) {
-          lastError = err;
-          if (!isProviderError(err)) throw err;
-        }
+        try { started = await startGeneration({ styleId, provider }, uploadBlob); break; }
+        catch (err) { lastError = err; if (!isProviderError(err)) throw err; }
       }
       if (!started) throw lastError;
 
+      const handleSuccess = async (blob: Blob) => {
+        const canvas = await blobToCanvas(blob);
+        setResult(canvas); setPhase('done'); refreshAccount();
+        // Cache the result in IndexedDB (24h).
+        if (uploadBlob) {
+          saveLastGeneration({
+            originalBlob: uploadBlob,
+            resultBlob: blob,
+            styleId,
+            styleLabel: resolveStyleMeta(currentStyle!).label,
+            createdAt: Date.now(),
+          }).catch(() => {});
+        }
+      };
+
       if (started.status === 'succeeded' && started.imageUrl) {
-        const blob = await fetchResultImage(started.imageUrl);
-        setResult(await blobToCanvas(blob));
-        setPhase('done');
-        refreshAccount();
-        return;
+        await handleSuccess(await fetchResultImage(started.imageUrl)); return;
       }
-      if (started.status === 'failed') {
-        throw new Error('Generation failed');
-      }
+      if (started.status === 'failed') throw new Error('Generation failed');
 
       setPhase('processing');
       const deadline = Date.now() + 180_000;
@@ -148,70 +187,45 @@ export default function ToolPage() {
         const status = await pollGeneration(started.generationId);
         if (status.status === 'succeeded') {
           if (!status.imageUrl) throw new Error('Generation completed without an image');
-          const blob = await fetchResultImage(status.imageUrl);
-          setResult(await blobToCanvas(blob));
-          setPhase('done');
-          refreshAccount();
-          return;
+          await handleSuccess(await fetchResultImage(status.imageUrl)); return;
         }
-        if (status.status === 'failed') {
-          throw new Error('Generation failed');
-        }
+        if (status.status === 'failed') throw new Error('Generation failed');
       }
       throw new Error('Generation timed out');
-    } catch (err) {
-      setPhase('ready');
-      setError(generateErrorMessage(err));
-    }
+    } catch (err) { setPhase('ready'); setError(generateErrorMessage(err)); }
   }, [uploadBlob, styleId, providerChain, refreshAccount]);
 
-  const selectStyle = useCallback((next: string) => {
-    setStyleId(next);
-  }, []);
-
+  const selectStyle = useCallback((next: string) => { setStyleId(next); }, []);
   const reset = useCallback(() => {
-    setApiOriginal(null);
-    setUploadBlob(null);
-    setFileName('');
-    setResult(null);
-    setError('');
-    setPhase('idle');
+    setApiOriginal(null); setUploadBlob(null); setFileName(''); setResult(null); setError(''); setPhase('idle');
+    clearLastGeneration().catch(() => {});
   }, []);
 
   const busy = phase === 'loading' || phase === 'processing';
   const currentStyle = allStyles.find((s) => s.id === styleId);
   const resultLabel = currentStyle ? resolveStyleMeta(currentStyle).label : en.compareResult;
-  const previewUrl = useMemo(
-    () => (apiOriginal ? apiOriginal.toDataURL('image/jpeg', 0.85) : null),
-    [apiOriginal],
-  );
+  const previewUrl = useMemo(() => (apiOriginal ? apiOriginal.toDataURL('image/jpeg', 0.85) : null), [apiOriginal]);
 
-  if (!authLoading && !user) {
-    return (
-      <AppLayout>
-        <div className="tool-gate">
-          <h1>Sign in to transform your photo</h1>
-          <p>You need an account to generate images — it’s free.</p>
-          <button
-            type="button"
-            className="btn-primary btn-lg"
-            onClick={signInWithGoogle}
-          >
-            Sign in with Google
-          </button>
-        </div>
-      </AppLayout>
-    );
-  }
+  // Rotate tips every 4 seconds during generation
+  useEffect(() => {
+    if (!busy) { setTipIndex(0); return; }
+    const timer = setInterval(() => {
+      setTipIndex((i) => (i + 1) % TIPS.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [busy]);
+
+  const handleGenerate = useCallback(() => {
+    if (!user) { signInWithGoogle(); return; }
+    processApi();
+  }, [user, processApi, signInWithGoogle]);
 
   return (
     <AppLayout>
       <div className="transform">
         <div className="transform-head">
-          <h1 className="transform-title">AI Image Transformation</h1>
-          <p className="transform-sub">
-            Upload a photo, choose a style, and generate a new visual with AI.
-          </p>
+          <h1 className="transform-title">Image to Image</h1>
+          <p className="transform-sub">Transform your image with AI Styles</p>
         </div>
 
         {phase === 'done' && apiOriginal && result ? (
@@ -223,105 +237,107 @@ export default function ToolPage() {
             onReset={reset}
           />
         ) : (
-          <div className="transform-steps">
-            <section className="transform-step">
-              <div className="transform-step-head">
-                <h3>Upload your photo</h3>
-              </div>
-              {apiOriginal ? (
-                <div className="photo-preview">
-                  <img
-                    className="photo-preview-img"
-                    src={previewUrl ?? ''}
-                    alt={fileName}
-                  />
-                  <div className="photo-preview-meta">
-                    <span className="file-name">{fileName}</span>
-                    <span className="file-dims">
-                      {apiOriginal.width} × {apiOriginal.height} px
-                    </span>
-                    <UploadDropzone onFile={handleFile} disabled={busy} compact />
+          <div className="i2i-split">
+            {/* ── Left: Upload ──────────────────────────────── */}
+            <div className="i2i-left">
+              <h3 className="i2i-section-title">Upload Image</h3>
+              <div className="i2i-upload-area">
+                {apiOriginal ? (
+                  <div className="i2i-preview">
+                    <img className="i2i-preview-img" src={previewUrl ?? ''} alt={fileName} />
+                    <div className="i2i-preview-meta">
+                      <span className="i2i-preview-name">{fileName}</span>
+                      <span className="i2i-preview-dims">{apiOriginal.width} × {apiOriginal.height}</span>
+                    </div>
+                    <div className="i2i-preview-actions">
+                      <UploadDropzone onFile={handleFile} disabled={busy} compact />
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <UploadDropzone onFile={handleFile} />
-              )}
-            </section>
-
-            <section className="transform-step">
-              <div className="transform-step-head">
-                <h3>Choose a style</h3>
-              </div>
-              <StyleGrid className="style-grid--compact">
-                {featureStyles.map((s) => (
-                  <StyleCard
-                    key={s.id}
-                    style={s}
-                    compact
-                    selected={styleId === s.id}
-                    onUse={selectStyle}
-                  />
-                ))}
-              </StyleGrid>
-            </section>
-
-            <section className="transform-step">
-              <div className="transform-step-head">
-                <h3>Generate</h3>
-              </div>
-              <div className="transform-actions">
-                <button
-                  type="button"
-                  className="btn-primary btn-lg"
-                  disabled={!apiOriginal || busy}
-                  onClick={() => processApi()}
-                >
-                  {busy ? 'Generating…' : 'Generate'}
-                </button>
-                {apiOriginal && (
-                  <button
-                    type="button"
-                    className="btn-ghost"
-                    onClick={reset}
-                    disabled={busy}
-                  >
-                    Remove photo
-                  </button>
+                ) : (
+                  <UploadDropzone onFile={handleFile} />
                 )}
               </div>
-            </section>
+            </div>
+
+            {/* ── Right: Style picker + Transform ──────────── */}
+            <div className="i2i-right">
+              <div className="i2i-right-header">
+                <h3 className="i2i-section-title">Choose a Style</h3>
+                {categories.length > 0 && (
+                  <CategoryTabs
+                    categories={categories}
+                    active={category}
+                    onChange={setCategory}
+                  />
+                )}
+              </div>
+
+              <div className="i2i-styles-scroll">
+                <div className="i2i-styles-grid">
+                  {featureStyles.map((s) => (
+                    <StyleCard
+                      key={s.id}
+                      style={s}
+                      compact
+                      selected={styleId === s.id}
+                      onUse={selectStyle}
+                      actionLabel=""
+                    />
+                  ))}
+                </div>
+                {featureStyles.length === 0 && (
+                  <div className="empty-state">
+                    <strong>No styles found</strong>
+                    <span>Try a different category.</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="i2i-footer">
+                {currentStyle && (
+                  <>
+                    <span className="i2i-style-label">{resolveStyleMeta(currentStyle).label}</span>
+                    <span className="i2i-meta-label">
+                      {MODEL_NAMES[currentStyle.model ?? ''] ?? currentStyle.model ?? 'AI Model'}
+                      {currentStyle.costUnits != null && <> · ⚡ {currentStyle.costUnits} Credits</>}
+                    </span>
+                  </>
+                )}
+                <button
+                  type="button"
+                  className="btn-primary i2i-transform-btn"
+                  disabled={!apiOriginal || !styleId || busy}
+                  onClick={handleGenerate}
+                >
+                  ✨ {busy ? 'Transforming…' : 'Transform Image'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
         {busy && (
           <div className="transform-busy" role="status">
-            <ProcessingOverlay
-              phase={phase === 'loading' ? 'loading' : 'processing'}
-              label="Generating…"
-            />
+            <ProcessingOverlay phase={phase === 'loading' ? 'loading' : 'processing'} label="Transforming your image…" />
+            <p className="transform-tip">{TIPS[tipIndex]}</p>
           </div>
         )}
 
         {error && <p className="error-text">{error}</p>}
 
-        {/* ── SEO landing content ────────────────────────────── */}
+        {/* ── SEO content ──────────────────────────────────── */}
         <section className="transform-seo">
           <div className="transform-seo-block">
-            <h2>How It Works</h2>
-            <p>
-              Upload an image, choose a style from the library, and press generate.
-              StyleForge runs an image-to-image AI model on your photo and returns
-              a transformed result — your composition and subject stay recognizable
-              while the visual style is completely reimagined.
-            </p>
+            <h2>How AI Image Transformation Works</h2>
+            <p>Upload an existing image, choose a Style, and let image-to-image AI transform the visual according to that Style's prompt and configuration. The transformation can change the image's artistic direction, lighting, color, atmosphere, texture, and overall aesthetic while preserving important elements of the original image.</p>
           </div>
           <div className="transform-seo-block">
-            <h2>What Can You Transform?</h2>
-            <p>
-              Portraits, landscapes, product shots, travel photos and more.
-              Transform a normal photo into a cinematic portrait, an AI fashion
-              photo, an anime character, a fantasy portrait or a Y2K photo.
-            </p>
+            <h2>Transform Your Photo into Different Styles</h2>
+            <p>StyleForge lets you transform the same photo into completely different visual directions. Turn a portrait into an anime character, recreate it as cartoon art, give it a cinematic editorial look, place it in a cyberpunk world, or explore fantasy and Y2K aesthetics.</p>
+          </div>
+          <div className="transform-seo-block">
+            <h2>Powered by Carefully Crafted AI Prompts</h2>
+            <p>Each Style is built around a carefully crafted AI prompt that defines how the original image should be transformed. The prompt can guide visual elements such as composition, lighting, color, atmosphere, texture, styling, and mood.</p>
           </div>
           <div className="transform-seo-faq">
             <h2>FAQ</h2>
@@ -335,8 +351,7 @@ export default function ToolPage() {
           <div className="transform-seo-block">
             <h2>Explore More Styles</h2>
             <p>
-              Browse the full library on the <Link to="/all-styles">All Styles</Link> page,
-              or discover a specific look on its own page — from{' '}
+              Browse the full library on the <Link to="/all-styles">All Styles</Link> page, or discover a specific look on its own page — from{' '}
               <Link to="/styles/cinematic-editorial">Cinematic Editorial</Link> to{' '}
               <Link to="/styles/anime-character">Anime Character</Link>.
             </p>

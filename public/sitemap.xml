@@ -24,20 +24,15 @@
     <loc>https://styleforge.org/blog</loc>
     <priority>0.6</priority>
   </url>
-  <url>
-    <loc>https://styleforge.org/photo-to-anime</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://styleforge.org/photo-to-cartoon</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://styleforge.org/anime-avatar-generator</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://styleforge.org/anime-filter</loc>
-    <priority>0.5</priority>
-  </url>
+  <!-- Style detail pages (added one by one as styles are uploaded) -->
+  <url><loc>https://styleforge.org/styles/magazine-editorial</loc><priority>0.8</priority></url>
+  <url><loc>https://styleforge.org/styles/paparazzi</loc><priority>0.8</priority></url>
+  <url><loc>https://styleforge.org/styles/minecraft-world</loc><priority>0.8</priority></url>
+  <url><loc>https://styleforge.org/styles/food-infographic</loc><priority>0.8</priority></url>
+  <url><loc>https://styleforge.org/styles/isometric-map</loc><priority>0.8</priority></url>
+  <url><loc>https://styleforge.org/styles/risograph-icons</loc><priority>0.8</priority></url>
+  <url><loc>https://styleforge.org/styles/metallic-logo</loc><priority>0.8</priority></url>
+  <url><loc>https://styleforge.org/styles/sticker-art</loc><priority>0.8</priority></url>
+  <url><loc>https://styleforge.org/styles/ink-illustration</loc><priority>0.8</priority></url>
+  <url><loc>https://styleforge.org/styles/lego-world</loc><priority>0.8</priority></url>
 </urlset>

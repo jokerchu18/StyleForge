@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import PrivacyBadge from '../components/PrivacyBadge';
 import { en } from '../i18n/en';
+import { setPageMeta } from '../lib/seo';
 
 interface Props {
   slug: string;
@@ -43,7 +44,7 @@ export default function SeoPage({ slug }: Props) {
   const content = CONTENT[slug] ?? CONTENT['photo-to-anime'];
 
   useEffect(() => {
-    document.title = `${content.title} | ${en.appName}`;
+    setPageMeta(`${content.title} | ${en.appName}`, content.body[0].slice(0, 160));
   }, [content.title]);
 
   return (

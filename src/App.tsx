@@ -8,15 +8,7 @@ import StyleDetailPage from './pages/StyleDetailPage';
 import CreationsPage from './pages/CreationsPage';
 import PricingPage from './pages/PricingPage';
 import AccountPage from './pages/AccountPage';
-import SeoPage from './pages/SeoPage';
 import { AccountProvider } from './hooks/useAccount';
-
-const SEO_SLUGS = [
-  'photo-to-anime',
-  'photo-to-cartoon',
-  'anime-avatar-generator',
-  'anime-filter',
-];
 
 export default function App() {
   return (
@@ -37,9 +29,6 @@ export default function App() {
         <Route path="/explore" element={<Navigate to="/all-styles" replace />} />
         <Route path="/create" element={<Navigate to="/create-style" replace />} />
         <Route path="/home" element={<Navigate to="/" replace />} />
-        {SEO_SLUGS.map((slug) => (
-          <Route key={slug} path={`/${slug}`} element={<SeoPage slug={slug} />} />
-        ))}
         <Route path="*" element={<HomePage />} />
         </Routes>
       </AccountProvider>

@@ -1,26 +1,11 @@
-// One-off upload: push local style preview images (public/styles/api/*) into
-// the public Supabase Storage "styles" bucket, so they no longer need to ship
-// with the codebase.
+// Upload local style preview images to Supabase Storage "styles" bucket.
+// Reads SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY from .env.local.
 //
-//   node scripts/upload-style-images.mjs
-//
-// Reads SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY from .env.local. Run AFTER the
-// 0009_styles_storage.sql migration (which creates the bucket + rewrites
-// preview_image to the "styles/<file>" object path).
+// Usage: node scripts/upload-style-images.mjs
+
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync, readdirSync } from 'node:fs';
-import { resolve, join, extname } from 'node:path';
-
-const env = loadEnv(resolve(process.cwd(), '.env.local'));
-const url = env.SUPABASE_URL;
-const key = env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!url || !key) {
-  console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local');
-  process.exit(1);
-}
-
-const supabase = createClient(url, key, { auth: { persistSession: false } });
+import { resolve, extname } from 'node:path';
 
 const DIR = resolve(process.cwd(), 'public', 'styles', 'api');
 const MIME = {
@@ -44,31 +29,39 @@ function loadEnv(path) {
 }
 
 async function main() {
-  const files = readdirSync(DIR).filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f));
+  const env = loadEnv(resolve(process.cwd(), '.env.local'));
+  const url = env.SUPABASE_URL;
+  const key = env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local');
+    process.exit(1);
+  }
+
+  const supabase = createClient(url, key, { auth: { persistSession: false } });
+
+  // Only upload the three new styles (old ones are already in Storage).
+const files = ['sticker-art.png', 'ink-illustration.png', 'lego-world.png'];
   let uploaded = 0;
 
   for (const file of files) {
-    const bytes = readFileSync(join(DIR, file));
+    const bytes = readFileSync(resolve(DIR, file));
     const ext = extname(file).toLowerCase();
     const contentType = MIME[ext] ?? 'image/png';
-    // `from('styles')` already scopes to the bucket; the object path is just
-    // the filename. DB stores `styles/<file>`, resolved to the public URL by
-    // api/_shared/styleCatalog.ts.
-    const objectPath = file;
 
     const { error } = await supabase.storage
       .from('styles')
-      .upload(objectPath, bytes, { contentType, upsert: true });
+      .upload(file, bytes, { contentType, upsert: true });
 
     if (error) {
       console.error(`✗ ${file}: ${error.message}`);
     } else {
       uploaded++;
-      console.log(`✓ styles/${objectPath}`);
+      console.log(`✓ ${file}`);
     }
   }
 
-  console.log(`\nUploaded ${uploaded}/${files.length} images to the "styles" bucket.`);
+  console.log(`\nUploaded ${uploaded}/${files.length} images to "styles" bucket.`);
 }
 
 main();

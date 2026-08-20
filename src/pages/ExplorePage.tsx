@@ -8,6 +8,7 @@ import CategoryTabs from '../components/CategoryTabs';
 import SortDropdown from '../components/SortDropdown';
 import { resolveStyleMeta } from '../shared/styles';
 import { useStyles } from '../hooks/useStyles';
+import { setPageMeta } from '../lib/seo';
 
 type SortKey = 'popular' | 'newest';
 
@@ -24,7 +25,10 @@ export default function ExplorePage() {
   const [sort, setSort] = useState<SortKey>('popular');
 
   useEffect(() => {
-    document.title = 'All Styles — AI Photo Styles | StyleForge';
+    setPageMeta(
+      'AI Image Styles for Photo Transformation | StyleForge',
+      'Explore curated AI Styles designed specifically for image transformation. Turn photos into anime characters, cartoon art, cinematic editorials, futuristic worlds, fantasy scenes, Y2K looks, and more.',
+    );
   }, []);
 
   const catalog = useStyles();
@@ -67,15 +71,15 @@ export default function ExplorePage() {
     <AppLayout>
       <div className="landing-app-main">
         <div className="explore-head">
-          <h1 className="hero-h1">All Styles</h1>
-          <p className="hero-sub">Browse AI photo styles and discover your next look.</p>
+          <h1 className="hero-h1">AI Image Transformation Styles</h1>
+          <p className="hero-sub">Transform your photos into stunning new visuals with image-to-image AI. Choose a style you love and create something extraordinary.</p>
 
           <div className="explore-controls">
             <div className="explore-row">
               <SearchBar
                 value={query}
                 onChange={setQuery}
-                placeholder="Search styles, categories, or tags…"
+                placeholder="Search styles, categories, or creative looks…"
               />
               <SortDropdown
                 value={sort}
@@ -96,8 +100,7 @@ export default function ExplorePage() {
             <p className="explore-count" aria-live="polite">
               {sorted.length} style{sorted.length === 1 ? '' : 's'}
             </p>
-            <div className="style-gallery-wrapper">
-              <StyleGrid>
+            <StyleGrid>
                 {sorted.map((s) => (
                   <StyleCard
                     key={s.id}
@@ -106,7 +109,6 @@ export default function ExplorePage() {
                   />
                 ))}
               </StyleGrid>
-            </div>
           </>
         ) : (
           <div className="empty-state">

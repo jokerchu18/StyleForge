@@ -19,7 +19,7 @@ export interface ReplicateModelDef {
   id: string;
   /** Replicate model identifier "owner/name". */
   model: string;
-  /** Exact version hash (empty → fall back to REPLICATE_MODEL_VERSION env). */
+  /** Exact version hash (hardcoded in the def below). */
   version: string;
   /** Credit cost for one generation with this model. */
   creditCost: number;
@@ -36,7 +36,7 @@ export const REPLICATE_MODEL_DEFS: Record<string, ReplicateModelDef> = {
   'flux-kontext-pro': {
     id: 'flux-kontext-pro',
     model: 'black-forest-labs/flux-kontext-pro',
-    version: process.env.REPLICATE_MODEL_VERSION ?? '',
+    version: '897a70f5a7dbd8a0611413b3b98cf417b45f266bd595c571a22947619d9ae462',
     creditCost: 20,
     buildInput: ({ imageBytes, mime, prompt, seed, extra }) => ({
       input_image: toDataUri(imageBytes, mime),
@@ -51,7 +51,7 @@ export const REPLICATE_MODEL_DEFS: Record<string, ReplicateModelDef> = {
     id: 'nano-banana-2',
     model: 'google/nano-banana-2',
     version: 'd1be8b5fc0931a253d417e12a484ac01ee9ccbc6daffd4792151377d5e5ff55f',
-    creditCost: 20,
+    creditCost: 30,
     buildInput: ({ imageBytes, mime, prompt, extra }) => ({
       image_input: [toDataUri(imageBytes, mime)],
       prompt,
@@ -59,18 +59,18 @@ export const REPLICATE_MODEL_DEFS: Record<string, ReplicateModelDef> = {
     }),
   },
 
-  // OpenAI gpt-image (served on Replicate).
-  'gpt-image': {
-    id: 'gpt-image',
-    model: process.env.OPENAI_REPLICATE_MODEL ?? 'openai/gpt-image-1',
-    version: process.env.OPENAI_REPLICATE_MODEL_VERSION ?? '',
+  // OpenAI gpt-image-2 (served on Replicate).
+  'gpt-image-2': {
+    id: 'gpt-image-2',
+    model: 'openai/gpt-image-2',
+    version: '225c978a7f938acc350564c4548ddc2476bfb33364bec6b5422227f55ce56bd3',
     creditCost: 30,
     buildInput: ({ imageBytes, mime, prompt, extra }) => ({
-      image: toDataUri(imageBytes, mime),
+      input_images: [toDataUri(imageBytes, mime)],
       prompt,
-      size: '1024x1024',
+      quality: 'medium',
+      aspect_ratio: '1:1',
       output_format: 'webp',
-      n: 1,
       ...(extra ?? {}),
     }),
   },
@@ -79,7 +79,7 @@ export const REPLICATE_MODEL_DEFS: Record<string, ReplicateModelDef> = {
 /** Resolve the model def for a style. Defaults to FLUX when unspecified. */
 export function resolveModelDef(style: StyleDefinition): ReplicateModelDef {
   const overrides = style.providerOverrides?.replicate;
-  const requested = overrides?.model ?? process.env.REPLICATE_MODEL ?? 'flux-kontext-pro';
+  const requested = overrides?.model ?? 'flux-kontext-pro';
 
   // Accept either a registry id ('nano-banana-2') or a full "owner/name".
   const def =
@@ -112,7 +112,7 @@ export function resolveModelVersion(def: ReplicateModelDef): string {
   if (idx >= 0) return def.model.slice(idx + 1);
   throw new ApiError(
     'UPSTREAM_ERROR',
-    `Replicate version is required for ${def.model} — set its version in api/providers/models.ts or REPLICATE_MODEL_VERSION`,
+    `Replicate version is required for ${def.model} — set its version in api/providers/models.ts`,
     'replicate',
   );
 }

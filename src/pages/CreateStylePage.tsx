@@ -5,6 +5,7 @@ import { en } from '../i18n/en';
 import { CATEGORY_PRESETS } from '../shared/styles-catalog';
 import { saveStyle } from '../lib/styles/saveStyle';
 import { useAuth } from '../hooks/useAuth';
+import { setPageMeta } from '../lib/seo';
 import {
   Select,
   SelectContent,
@@ -20,7 +21,7 @@ interface ReplicateModelOption {
 
 export default function CreateStylePage() {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signInWithGoogle } = useAuth();
 
   const [label, setLabel] = useState('');
   const [description, setDescription] = useState('');
@@ -37,7 +38,7 @@ export default function CreateStylePage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    document.title = `${en.appName} — ${en.create.title}`;
+    setPageMeta(`${en.appName} — ${en.create.title}`, 'Build a custom transformation Style with your own AI prompt, reference image, and visual direction.');
   }, []);
 
   useEffect(() => {
@@ -71,9 +72,16 @@ export default function CreateStylePage() {
   };
 
   const handleSubmit = async () => {
+    if (!user) { signInWithGoogle(); return; }
     setError('');
-    if (!label.trim() || !prompt.trim() || !model || !category || !sampleImage) {
-      setError('Please fill in all required fields and upload a sample image.');
+    const missing: string[] = [];
+    if (!label.trim()) missing.push('Style name');
+    if (!prompt.trim()) missing.push('AI Prompt');
+    if (!category) missing.push('Category');
+    if (!model) missing.push('Model');
+    if (!sampleImage) missing.push('Sample image');
+    if (missing.length) {
+      setError(`Please fill in: ${missing.join(', ')}.`);
       return;
     }
     setSubmitting(true);
@@ -85,7 +93,7 @@ export default function CreateStylePage() {
         prompt: prompt.trim(),
         model,
         seed: seed.trim() === '' ? undefined : Number(seed),
-        sampleImage,
+        sampleImage: sampleImage!,
       });
       setSuccess(true);
       setTimeout(() => navigate('/all-styles'), 1500);
@@ -102,16 +110,11 @@ export default function CreateStylePage() {
     <AppLayout>
       <div className="landing-app-main">
         <div className="create-head">
-          <h1 className="hero-h1">{en.create.title}</h1>
-          <p className="hero-sub">{en.create.subtitle}</p>
+          <h1 className="hero-h1">Create Your Own AI Image Style</h1>
+          <p className="hero-sub">Build a custom transformation Style with your own AI prompt, reference image, and visual direction.</p>
         </div>
 
-        {!user && !authLoading ? (
-          <div className="create-gate">
-            <p className="error-text">{en.create.needLogin}</p>
-          </div>
-        ) : (
-          <div className="create-layout">
+        <div className="create-layout">
             {/* Left — style information */}
             <div className="create-form">
               <div className="create-field">
@@ -177,7 +180,6 @@ export default function CreateStylePage() {
                         disabled={busy}
                       >
                         <strong>{m.label}</strong>
-                        <small>{m.id}</small>
                       </button>
                     ))}
                   </div>
@@ -269,7 +271,6 @@ export default function CreateStylePage() {
               </button>
             </div>
           </div>
-        )}
       </div>
     </AppLayout>
   );

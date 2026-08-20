@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import { apiJson } from '../lib/api';
 import { useAuth } from '../hooks/useAuth';
+import { setPageMeta } from '../lib/seo';
 
 interface CreationItem {
   id: string;
@@ -56,7 +57,7 @@ export default function CreationsPage() {
   );
 
   useEffect(() => {
-    document.title = 'My Creations | StyleForge';
+    setPageMeta('My Creations | StyleForge', 'Every AI image you\'ve created with StyleForge, all in one place.');
     if (user && creationsCache.has(user.id)) {
       setCreations(creationsCache.get(user.id) as CreationItem[]);
       setLoading(false);
@@ -88,7 +89,7 @@ export default function CreationsPage() {
       <div className="landing-app-main">
         <div className="creations-head">
           <h1 className="hero-h1">My Creations</h1>
-          <p className="hero-sub">Every image you’ve transformed.</p>
+          <p className="hero-sub">Every AI image you’ve created with StyleForge, all in one place.</p>
         </div>
 
         {loading ? (
@@ -167,14 +168,14 @@ export default function CreationsPage() {
           </>
         ) : (
           <div className="empty-state">
-            <strong>No creations yet</strong>
-            <span>Transform a photo and it will appear here.</span>
+            <strong>No Creations Yet</strong>
+            <span>Transform your first photo and your AI-generated images will appear here.</span>
             <button
               type="button"
               className="btn-primary"
               onClick={() => navigate('/image-to-image')}
             >
-              Transform a photo
+              Create Your First Image
             </button>
           </div>
         )}

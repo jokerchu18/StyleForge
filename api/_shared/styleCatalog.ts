@@ -61,8 +61,8 @@ function toStyleDefinition(row: StyleRow): StyleDefinition {
     providerOverrides: row.generation_config as StyleDefinition['providerOverrides'],
   };
 
-  // Credit cost for one generation. Prefer the model's registered cost (e.g.
-  // gpt-image = 3, flux/nano-banana = 2); fall back to the provider tier.
+  // Credit cost for one generation. Prefer the model's registered cost; fall
+  // back to the provider tier.
   try {
     const modelId = style.providerOverrides?.replicate?.model;
     style.costUnits = modelCreditCost(modelId);

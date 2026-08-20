@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import AppLayout from '../components/layout/AppLayout';
 import { en } from '../i18n/en';
+import { setPageMeta } from '../lib/seo';
 
 interface Post {
   slug: string;
@@ -43,7 +44,7 @@ const POSTS: Post[] = [
 
 export default function BlogPage() {
   useEffect(() => {
-    document.title = `${en.blog.title} | ${en.appName}`;
+    setPageMeta(`${en.blog.title} | ${en.appName}`, en.blog.subtitle);
   }, []);
 
   return (
