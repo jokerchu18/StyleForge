@@ -4,6 +4,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { sendJson, methodNotAllowed, readJsonBody } from './_shared/http.js';
 import { getUserId } from './_shared/auth.js';
 import { supabaseAdmin } from './_shared/supabase.js';
+import { communityStyleRepository } from './_shared/styleCatalog.js';
 import { ApiError, sendError } from './_shared/errors.js';
 
 function parseQuery(url: string | undefined): Record<string, string> {
@@ -27,8 +28,17 @@ export default async function handler(
 ): Promise<void> {
   try {
     if (!supabaseAdmin) throw new Error('Supabase not configured');
+    const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
     const method = (req.method ?? 'GET').toUpperCase();
     const userId = await getUserId(req);
+
+    // Route: /api/my-styles (merged into this file to stay within 12-function limit)
+    if (url.pathname === '/api/my-styles') {
+      if (methodNotAllowed(req, res, ['GET'])) return;
+      const items = await communityStyleRepository.listByUser(userId);
+      sendJson(res, 200, { items });
+      return;
+    }
 
     if (method === 'GET') {
       const { data, error } = await supabaseAdmin

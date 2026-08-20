@@ -1,19 +1,22 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "rewrites": [
+    { "source": "/api/health", "destination": "/api/status" },
+    { "source": "/api/models", "destination": "/api/status" },
+    { "source": "/api/pricing", "destination": "/api/status" },
+    { "source": "/api/my-styles", "destination": "/api/saved-styles" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
   "functions": {
     "api/transform.ts": { "maxDuration": 60 },
     "api/generate.ts": { "maxDuration": 60 },
     "api/replicate-webhook.ts": { "maxDuration": 30 },
-    "api/health.ts": { "maxDuration": 10 },
+    "api/status.ts": { "maxDuration": 10 },
     "api/styles.ts": { "maxDuration": 10 },
-    "api/models.ts": { "maxDuration": 10 },
     "api/account.ts": { "maxDuration": 10 },
-    "api/pricing.ts": { "maxDuration": 10 },
     "api/generations.ts": { "maxDuration": 10 },
     "api/saved-styles.ts": { "maxDuration": 10 },
     "api/style-review.ts": { "maxDuration": 10 },
-    "api/my-styles.ts": { "maxDuration": 10 },
     "api/checkout.ts": { "maxDuration": 10 },
     "api/ls-webhook.ts": { "maxDuration": 10 }
   }
