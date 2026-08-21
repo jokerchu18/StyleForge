@@ -28,7 +28,7 @@ export default function ContactPage() {
             <h3>Feedback</h3>
             <p>
               Want to suggest a new style or feature? Send your ideas to{' '}
-              <a href="mailto:feedback@styleforge.org">feedback@styleforge.org</a>.
+              <a href="mailto:support@styleforge.org">support@styleforge.org</a>.
             </p>
           </div>
 
@@ -36,7 +36,7 @@ export default function ContactPage() {
             <h3>Legal</h3>
             <p>
               For legal or privacy inquiries, reach out to{' '}
-              <a href="mailto:legal@styleforge.org">legal@styleforge.org</a>.
+              <a href="mailto:support@styleforge.org">support@styleforge.org</a>.
             </p>
           </div>
 

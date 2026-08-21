@@ -66,7 +66,7 @@ export default function PrivacyPage() {
         <h2>7. Contact</h2>
         <p>
           For privacy-related inquiries, contact us at{' '}
-          <a href="mailto:privacy@styleforge.org">privacy@styleforge.org</a>.
+          <a href="mailto:support@styleforge.org">support@styleforge.org</a>.
         </p>
 
         <h2>8. Changes to This Policy</h2>

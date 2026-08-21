@@ -77,7 +77,7 @@ export default function TermsPage() {
         <h2>10. Contact</h2>
         <p>
           For questions about these terms, contact us at{' '}
-          <a href="mailto:legal@styleforge.org">legal@styleforge.org</a>.
+          <a href="mailto:support@styleforge.org">support@styleforge.org</a>.
         </p>
       </div>
     </AppLayout>
