@@ -18,6 +18,6 @@
     "api/saved-styles.ts": { "maxDuration": 10 },
     "api/style-review.ts": { "maxDuration": 10 },
     "api/checkout.ts": { "maxDuration": 10 },
-    "api/ls-webhook.ts": { "maxDuration": 10 }
+    "api/creem-webhook.ts": { "maxDuration": 30 }
   }
 }

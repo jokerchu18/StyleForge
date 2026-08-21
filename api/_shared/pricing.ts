@@ -47,8 +47,8 @@ export function computeGenerationCost(opts: {
   return { units, tier };
 }
 
-/** Lemon Squeezy variant ids are resolved from env (used by the LS webhook). */
-export const LS_VARIANTS: Record<'plus' | 'pro', string> = {
-  plus: process.env.LS_VARIANT_PLUS_ID ?? '',
-  pro: process.env.LS_VARIANT_PRO_ID ?? '',
+/** Creem product ids are resolved from env (used by the Creem webhook). */
+export const CREEM_PRODUCTS: Record<'plus' | 'pro', string> = {
+  plus: process.env.CREEM_PRODUCT_PLUS_ID ?? '',
+  pro: process.env.CREEM_PRODUCT_PRO_ID ?? '',
 };
